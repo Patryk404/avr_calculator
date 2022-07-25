@@ -1,12 +1,12 @@
 /avr_sim_project_file
 C:\Users\Patryk\Documents\avr_sim\projects\display_lcd\display_lcd.asm
 mainasm=display_lcd.asm
-file=display_lcd.lst,111,71,130
-file=display_lcd.asm,95,35,106
+file=display_lcd.lst,126,57,133
+file=display_lcd.asm,256,21,287
 clock=1000000
 device-type=ATmega88PA
 device-package=28-pin-PDIP
-windows=acepstwz
+windows=acePstwz
 syhili=i255,,b;d16711680,,;k8421504,12632256,bi;c8421504,,;f128,,;l65280,,;r8388608,,b;z32896,65535,;n0,,;
 alert1=0,0,-1,-1,,0,0
 adcvref=5.0000
