@@ -122,6 +122,7 @@ Start:            ; stack initialization
                  ;;;;;;;;;;;;;;;;;;;;;;;;;
                  ; initialization of pd0->pd7 (DATA BUS) to output mode
                  ; initialization of pb0->pb1 (R/W AND ENABLE PIN) to output mode
+                 ; initialization of pd0->pd4 to output mode
       SBI DDRC,DDC0
       SBI DDRC,DDC1
       SER R16
@@ -251,6 +252,8 @@ Initialization_LCD_HARDWARE:
 ; **********************************
 ;
 Loop:
+    IN R16, PIND
+    
 	rjmp loop
 
 enable:
