@@ -1,4 +1,6 @@
-movefile.ps1
-display_lcd.hex
-display_lcd.lst
-display_lcd.pro
+gavrasm.exe
+instr.asm 
+m88PAdef.inc
+main.hex
+main.lst
+ReadMe.txt

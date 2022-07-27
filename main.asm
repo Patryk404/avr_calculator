@@ -32,6 +32,13 @@
 ; .equ clock=1000000 ; Define the clock frequency
 ;
 .equ fclk=16000000
+.equ reset=0b00110000
+.equ font_and_lines=0b00111000
+.equ display_off=0b00001000
+.equ clear_display=0b00000001
+.equ entry_mode=0b00000110
+.equ display_on_with_cursor_blink=0b00001111
+.equ set_position_0=0b10000000
 ; **********************************
 ;  F I X  &  D E R I V.  C O N S T
 ; **********************************
@@ -115,10 +122,10 @@ Start:            ; stack initialization
                  ;;;;;;;;;;;;;;;;;;;;;;;;;
                  ; initialization of pd0->pd7 (DATA BUS) to output mode
                  ; initialization of pb0->pb1 (R/W AND ENABLE PIN) to output mode
-      SBI DDRB,DDB0
-      SBI DDRB,DDB1
+      SBI DDRC,DDC0
+      SBI DDRC,DDC1
       SER R16
-      OUT DDRD,R16
+      OUT DDRB,R16
                  ;;;;;;;;;;;;;;;;;;;;;;;;;
                  ;;;;;
 Initialization_LCD_HARDWARE:
@@ -127,180 +134,116 @@ Initialization_LCD_HARDWARE:
 
       ; first part of reset sequence
 
-      ldi temp,0b00110000  ; reset LCD
-      out PORTD,temp
+      ldi temp,reset  ; reset LCD
+      out PORTB,temp
       rcall clear_enable
-      rcall enable_lol
+      rcall enable
       ldi temp,10
       rcall delayTx1mS
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ; second part of reset sequence
-      ldi temp,0b00110000
-      out PORTD,temp
+      ldi temp,reset
+      out PORTB,temp
       rcall clear_enable
-      rcall enable_lol
+      rcall enable
       ldi temp,200
       rcall delayTx1uS
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ; Third part of reset sequence
-      ldi temp,0b00110000
-      out PORTD,temp
+      ldi temp,reset
+      out PORTB,temp
       rcall clear_enable
-      rcall enable_lol
+      rcall enable
       ldi temp,200
       rcall delayTx1uS
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
       ; set mode lines and font
-      ldi temp,0b00111000
-      out PORTD,temp
-      rcall clear_enable
-      rcall enable_lol
-      ldi temp,80
-      rcall delayTx1uS
+      ldi temp,font_and_lines
+      rcall send_command
       ;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ; Display On/Off Control instruction
-      ldi temp,0b00001000        ;; DISPLAY OFF
-      out PORTD,temp
-      rcall clear_enable
-      rcall enable_lol
-      ldi temp,80
-      rcall delayTx1uS
+      ldi temp,display_off        ;; DISPLAY OFF
+      rcall send_command
 
 
-      ldi temp,0b00000001 ; clear display instruction
-      out PORTD,temp
-      rcall clear_enable
-      rcall enable_lol
-      ldi temp,4
-      rcall delayTx1mS
+      ldi temp,clear_display ; clear display instruction
+      rcall send_command
 
 
-      ldi temp,0b00000110     ; entry mode
-      out PORTD,temp
-      rcall clear_enable
-      rcall enable_lol
-      ldi temp,80
-      rcall delayTx1uS
+      ldi temp,entry_mode     ; entry mode
+      rcall send_command
 
-      ldi temp,0b00001111 ; turn display on enable cursor and blink ;)
-      out PORTD,temp
-      rcall clear_enable
-      rcall enable_lol
-      ldi temp,80
-      rcall delayTx1uS
+
+      ldi temp,display_on_with_cursor_blink ; turn display on enable cursor and blink ;)
+      rcall send_command
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;; WRITING SCREEN!
 
-      ldi temp,0b10000000 ; SET POSITION OF CURSOR
-      out PORTD,temp
+      ldi temp,set_position_0 ; SET POSITION OF CURSOR
+      out PORTB,temp
       rcall clear_enable
-      rcall enable_lol
+      rcall enable
       ldi temp,80
       rcall delayTx1uS
 
       ldi temp,0b01010000 ; "P"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
       ldi temp,100
       rcall delayTx1mS
 
       ldi temp,0b01000001 ; "A"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
       ldi temp,100
       rcall delayTx1mS
 
       ldi temp,0b01010100 ; "T"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
       ldi temp,100
       rcall delayTx1mS
 
       ldi temp,0b01010010 ; "R"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
       ldi temp,100
       rcall delayTx1mS
 
       ldi temp,0b01011001 ; "Y"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
       ldi temp,100
       rcall delayTx1mS
 
       ldi temp,0b01001011 ; "K"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
       ldi temp,100
       rcall delayTx1mS
 
       ldi temp,0b00110100 ; "4"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
       ldi temp,100
       rcall delayTx1mS
 
       ldi temp,0b00110000 ; "0"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
       ldi temp,100
       rcall delayTx1mS
 
       ldi temp,0b00110100 ; "4"
-      out PORTD,temp
-      sbi PORTB,PORTB0
-      sbi PORTB,PORTB1
-      rcall delay1uS
-      cbi PORTB,PORTB1
-      rcall delay1uS
+      rcall send_letter
 
 ;
 ; **********************************
@@ -310,15 +253,32 @@ Initialization_LCD_HARDWARE:
 Loop:
 	rjmp loop
 
-enable_lol:
-  sbi PORTB,PORTB1
-  rcall delay1uS
-  sbi PORTB,PORTB0
-  rcall delay1uS
-  ret
+enable:
+    sbi PORTC,PORTC1
+    rcall delay1uS
+    sbi PORTC,PORTC0
+    rcall delay1uS
+    ret
 clear_enable:
-  cbi PORTB,PORTB0
-  cbi PORTB,PORTB1
+    cbi PORTC,PORTC0
+    cbi PORTC,PORTC1
+    ret
+send_command:    
+      out PORTB,temp
+      rcall clear_enable
+      rcall enable
+      ldi temp,80
+      rcall delayTx1uS
+      ret
+
+send_letter:
+      out PORTB,temp
+      sbi PORTC,PORTC0
+      sbi PORTC,PORTC1
+      rcall delay1uS
+      cbi PORTC,PORTC1
+      rcall delay1uS
+      ret
 ;
 ; End of source code
 ;
