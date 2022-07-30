@@ -284,6 +284,14 @@ Loop:
     ldi temp,3
     rcall delayTx1mS
 
+    rcall check_row3
+    ldi temp,3
+    rcall delayTx1mS
+
+    rcall check_row4
+    ldi temp,3
+    rcall delayTx1mS
+
     ; CBI PORTD,PORTD6
 
     ; IN temp,PIND
@@ -329,8 +337,29 @@ check_row1:
       IN temp,PIND
       ANDI temp,$08
       cpi temp,$08
+      brne next_key_row1_1
+      ldi temp,0b00110001
+      rcall send_letter
+next_key_row1_1:
+      IN temp,PIND
+      ANDI temp,$04
+      cpi temp,$04
+      brne next_key_row1_2
+      ldi temp,0b00110010
+      rcall send_letter
+next_key_row1_2:
+      IN temp,PIND
+      ANDI temp,$02
+      cpi temp,$02
+      brne next_key_row1_3
+      ldi temp,0b00110011
+      rcall send_letter
+next_key_row1_3: 
+      IN temp,PIND 
+      ANDI temp,$01
+      cpi temp,$01
       brne return_from_row1
-      ldi temp,0b00110100
+      ldi temp,0b00101011
       rcall send_letter
 return_from_row1:
       cbi PORTD,PORTD7
@@ -343,20 +372,101 @@ check_row2:
       IN temp,PIND
       ANDI temp,$08
       cpi temp,$08
+      brne next_key_row2_1
+      ldi temp,0b00110100
+      rcall send_letter
+next_key_row2_1:
+      IN temp,PIND
+      ANDI temp,$04
+      CPI temp,$04
+      brne next_key_row2_2
+      ldi temp,0b00110101
+      rcall send_letter
+next_key_row2_2:
+      IN temp,PIND
+      ANDI temp,$02
+      CPI temp,$02
+      brne next_key_row2_3
+      ldi temp,0b00110110
+      rcall send_letter
+next_key_row2_3:
+      IN temp,PIND
+      ANDI temp,$01
+      CPI temp,$01
       brne return_from_row2
-      ldi temp,0b01010100
+      ldi temp,0b00101101
       rcall send_letter
 return_from_row2: 
       CBI PORTD,PORTD6
       ret 
 
-;
-; End of source code
-;
-; (Add Copyright information here, e.g.
-; .db "(C)2021 by Gerhard Schmidt  " ; Source code readable
-; .db "C(2)20 1ybG reahdrS hcimtd  " ; Machine code format
-;
+
+check_row3:
+    sbi PORTD,PORTD5
+    rcall delay1mS
+    in temp,PIND
+    ANDI temp,$08
+    CPI temp,$08
+    brne next_key_row3_1
+    ldi temp,0b00110111
+    rcall send_letter
+next_key_row3_1:
+    in temp,PIND
+    ANDI temp,$04
+    CPI temp,$04
+    brne next_key_row3_2
+    ldi temp,0b00111000
+    rcall send_letter
+next_key_row3_2:
+    in temp,PIND
+    andi temp,$02
+    cpi temp,$02
+    brne next_key_row3_3
+    ldi temp,0b00111001
+    rcall send_letter
+next_key_row3_3:
+    in temp,PIND
+    andi temp,$01
+    cpi temp,$01
+    brne return_from_row3
+    ldi temp,0b00101010
+    rcall send_letter
+return_from_row3:
+    CBI PORTD,PORTD5
+    ret
+
+check_row4:
+    sbi PORTD,PORTD4
+    rcall delay1mS
+    in temp,PIND
+    andi temp,$08 ; Clear button 
+    cpi temp,$08 ; 
+    brne next_key_row4_1 
+next_key_row4_1:
+    IN temp,PIND
+    andi temp,$04
+    cpi temp,$04
+    brne next_key_row4_2
+    ldi temp,0b00110000
+    rcall send_letter
+next_key_row4_2:
+    IN temp,PIND
+    andi temp,$02
+    cpi temp,$02 ; Equal button
+    brne next_key_row4_3
+next_key_row4_3:
+    IN temp,PIND
+    andi temp,$01
+    cpi temp,$01
+    brne return_from_row4
+    ldi temp,0b11111101
+    rcall send_letter
+return_from_row4:
+    CBI PORTD,PORTD4
+    ret
+
+menu:
+    ret
 
 delayTx1mS:
     rcall delay1mS
