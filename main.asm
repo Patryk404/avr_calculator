@@ -125,6 +125,23 @@ Start:            ; stack initialization
                  ; initialization of pd0->pd4 to output mode
       SBI DDRC,DDC0
       SBI DDRC,DDC1
+
+
+      ;;;;;;;;;;;; ENABLING FIRST BITS FOR KEYBOARD AS OUTPUT
+      SBI DDRD,DDD7
+      SBI DDRD,DDD6
+      SBI DDRD,DDD5
+      SBI DDRD,DDD4
+      ;;;;;;;;;;;;;;;;;;;    
+     ;;;;;;;;;;;;; ENABLING BITS FOR KEYBOARD AS AN INPUT
+      CBI DDRD,DDD3
+      CBI DDRD,DDD2
+      CBI DDRD,DDD1
+      CBI DDRD,DDD0
+     ;;;;;;;;;;;;;
+
+
+
       SER R16
       OUT DDRB,R16
                  ;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -198,53 +215,59 @@ Initialization_LCD_HARDWARE:
       ldi temp,0b01010000 ; "P"
       rcall send_letter
 
-      ldi temp,100
+      ldi temp,10
       rcall delayTx1mS
 
       ldi temp,0b01000001 ; "A"
       rcall send_letter
 
-      ldi temp,100
+      ldi temp,10
       rcall delayTx1mS
 
       ldi temp,0b01010100 ; "T"
       rcall send_letter
 
-      ldi temp,100
+      ldi temp,10
       rcall delayTx1mS
 
       ldi temp,0b01010010 ; "R"
       rcall send_letter
 
-      ldi temp,100
+      ldi temp,10
       rcall delayTx1mS
 
       ldi temp,0b01011001 ; "Y"
       rcall send_letter
 
-      ldi temp,100
+      ldi temp,10
       rcall delayTx1mS
 
       ldi temp,0b01001011 ; "K"
       rcall send_letter
 
-      ldi temp,100
+      ldi temp,10
       rcall delayTx1mS
 
       ldi temp,0b00110100 ; "4"
       rcall send_letter
 
-      ldi temp,100
+      ldi temp,10
       rcall delayTx1mS
 
       ldi temp,0b00110000 ; "0"
       rcall send_letter
 
-      ldi temp,100
+      ldi temp,10
       rcall delayTx1mS
 
       ldi temp,0b00110100 ; "4"
       rcall send_letter
+
+      ldi temp,entry_mode     ; entry mode
+      rcall send_command
+
+      ldi temp,clear_display ; clear display instruction
+      rcall send_command
 
 ;
 ; **********************************
@@ -252,9 +275,26 @@ Initialization_LCD_HARDWARE:
 ; **********************************
 ;
 Loop:
-    IN R16, PIND
-    
-	rjmp loop
+    rcall check_row1
+    ldi temp,3
+    rcall delayTx1mS
+
+
+    rcall check_row2
+    ldi temp,3
+    rcall delayTx1mS
+
+    ; CBI PORTD,PORTD6
+
+    ; IN temp,PIND
+    ; ANDI temp,$01
+    ; cpi temp,1
+    ; BRNE Loop
+    ; ldi temp,0b00110000
+    ; rcall send_letter
+    ; ldi temp,10
+    ; rcall delayTx1mS
+    rjmp Loop
 
 enable:
     sbi PORTC,PORTC1
@@ -282,6 +322,34 @@ send_letter:
       cbi PORTC,PORTC1
       rcall delay1uS
       ret
+
+check_row1:
+      sbi PORTD,PORTD7
+      rcall delay1mS
+      IN temp,PIND
+      ANDI temp,$08
+      cpi temp,$08
+      brne return_from_row1
+      ldi temp,0b00110100
+      rcall send_letter
+return_from_row1:
+      cbi PORTD,PORTD7
+      ret
+
+
+check_row2:
+      sbi PORTD,PORTD6
+      rcall delay1mS
+      IN temp,PIND
+      ANDI temp,$08
+      cpi temp,$08
+      brne return_from_row2
+      ldi temp,0b01010100
+      rcall send_letter
+return_from_row2: 
+      CBI PORTD,PORTD6
+      ret 
+
 ;
 ; End of source code
 ;
