@@ -5,7 +5,6 @@ Fully coded in assembly.
 Code uploaded by isp programmer.
 Target device: Atmega88PA
 
-
 RUN:
 
 make

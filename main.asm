@@ -52,6 +52,7 @@
 ; free: R0 to R14
 .def rSreg = R15 ; Save/Restore status port
 .def temp = R16 ; Define multipurpose register
+.def zero = R17 
 ; free: R17 to R29
 ; free: R31:R30 = Z
 ;
@@ -63,6 +64,7 @@
 .org SRAM_START
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
+
 ;   .byte 16 ; Reserve 16 bytes)
 ;
 ; **********************************
@@ -71,6 +73,11 @@
 ;
 .cseg
 .org 000000
+author: 
+.db "Patryk Kurek",0x00
+
+calculatorString:   ;; here is some sort of issue 
+.db "Avr calculator",0x00
 ;
 ; **********************************
 ; R E S E T  &  I N T - V E C T O R S
@@ -140,6 +147,8 @@ Start:            ; stack initialization
       CBI DDRD,DDD0
      ;;;;;;;;;;;;;
 
+
+    ;;; reset pinc2 for reset button
     cbi portc,portc2
     cbi ddrc,ddc2
 
@@ -148,6 +157,8 @@ Start:            ; stack initialization
                  ;;;;;;;;;;;;;;;;;;;;;;;;;
                  ;;;;;
 Initialization_LCD_HARDWARE:
+      ldi zero,0
+
       ldi temp,200
       rcall delayTx1mS
 
@@ -213,59 +224,20 @@ Initialization_LCD_HARDWARE:
       ldi temp,80
       rcall delayTx1uS
 
-      ldi temp,0b01010000 ; "P"
-      rcall send_letter
+    ldi ZL, low(author)
+    ldi ZH, high(author)
 
-      ldi temp,10
-      rcall delayTx1mS
+    rcall print
 
-      ldi temp,0b01000001 ; "A"
-      rcall send_letter
+    ldi temp,250
+    rcall delayTx1mS
 
-      ldi temp,10
-      rcall delayTx1mS
+    rcall reset_lcd
 
-      ldi temp,0b01010100 ; "T"
-      rcall send_letter
+    ldi ZL, low(calculatorString)
+    ldi ZH, high(calculatorString)
 
-      ldi temp,10
-      rcall delayTx1mS
-
-      ldi temp,0b01010010 ; "R"
-      rcall send_letter
-
-      ldi temp,10
-      rcall delayTx1mS
-
-      ldi temp,0b01011001 ; "Y"
-      rcall send_letter
-
-      ldi temp,10
-      rcall delayTx1mS
-
-      ldi temp,0b01001011 ; "K"
-      rcall send_letter
-
-      ldi temp,10
-      rcall delayTx1mS
-
-      ldi temp,0b00110100 ; "4"
-      rcall send_letter
-
-      ldi temp,10
-      rcall delayTx1mS
-
-      ldi temp,0b00110000 ; "0"
-      rcall send_letter
-
-      ldi temp,10
-      rcall delayTx1mS
-
-      ldi temp,0b00110100 ; "4"
-      rcall send_letter
-
-      rcall reset_lcd
-
+    rcall print
 ;
 ; **********************************
 ;    P R O G R A M   L O O P
@@ -467,6 +439,17 @@ reset_lcd:
 
     ldi temp,clear_display ; clear display instruction
     rcall send_command
+    ret
+
+print:
+    lpm temp,Z+
+    cp temp,zero
+    breq end_print_loop
+    rcall send_letter
+    ldi temp,10
+    rcall delayTx1mS
+    rjmp print
+end_print_loop:
     ret
 
 menu:
