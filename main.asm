@@ -140,7 +140,8 @@ Start:            ; stack initialization
       CBI DDRD,DDD0
      ;;;;;;;;;;;;;
 
-
+    cbi portc,portc2
+    cbi ddrc,ddc2
 
       SER R16
       OUT DDRB,R16
@@ -263,11 +264,7 @@ Initialization_LCD_HARDWARE:
       ldi temp,0b00110100 ; "4"
       rcall send_letter
 
-      ldi temp,entry_mode     ; entry mode
-      rcall send_command
-
-      ldi temp,clear_display ; clear display instruction
-      rcall send_command
+      rcall reset_lcd
 
 ;
 ; **********************************
@@ -278,7 +275,6 @@ Loop:
     rcall check_row1
     ldi temp,3
     rcall delayTx1mS
-
 
     rcall check_row2
     ldi temp,3
@@ -292,16 +288,8 @@ Loop:
     ldi temp,3
     rcall delayTx1mS
 
-    ; CBI PORTD,PORTD6
+    rcall check_reset
 
-    ; IN temp,PIND
-    ; ANDI temp,$01
-    ; cpi temp,1
-    ; BRNE Loop
-    ; ldi temp,0b00110000
-    ; rcall send_letter
-    ; ldi temp,10
-    ; rcall delayTx1mS
     rjmp Loop
 
 enable:
@@ -463,6 +451,22 @@ next_key_row4_3:
     rcall send_letter
 return_from_row4:
     CBI PORTD,PORTD4
+    ret
+
+check_reset:
+    IN temp,PINC
+    andi temp,$04
+    brne return_from_reset
+    rcall reset_lcd
+return_from_reset:
+    ret
+
+reset_lcd: 
+    ldi temp,entry_mode     ; entry mode
+    rcall send_command
+
+    ldi temp,clear_display ; clear display instruction
+    rcall send_command
     ret
 
 menu:
