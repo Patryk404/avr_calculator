@@ -165,7 +165,9 @@ Start:            ; stack initialization
     
     ldi temp,0
 
-    st Z,temp
+    sts calculatorSign,temp
+
+	lds temp,calculatorSign
                  ;;;;;;;;;;;;;;;;;;;;;;;;;
                  ;;;;;
 Initialization_LCD_HARDWARE:
@@ -350,16 +352,13 @@ next_key_row1_3:
       cpi counter,$10
       breq return_from_row1
       
-      ldi ZL,LOW(calculatorSign<<1)
-      ldi ZH,HIGH(calculatorSign<<1)
-
-      lpm temp,Z
+	  lds temp,calculatorSign
 
       cpi temp,0
       brne return_from_row1 
 save_sign:
       ldi temp,'+'
-      st Z,temp
+      sts calculatorSign,temp
       rcall send_letter
 return_from_row1:
       cbi PORTD,PORTD7
