@@ -40,8 +40,9 @@
 .equ display_on_with_cursor_blink=0b00001111
 .equ set_position_0=0b10000000
 .equ force_cursor_beginning_second_line=$C0
-.equ decrement_cursor=$04
-.equ increment_cursor=$06
+.equ set_cursor_shift_left=$04
+.equ set_cursor_shift_right=$06
+.equ shift_right=0b00010100
 ; **********************************
 ;  F I X  &  D E R I V.  C O N S T
 ; **********************************
@@ -566,7 +567,7 @@ undo: ;; for deleting numbers
     ldi temp,entry_mode
     rcall send_command
 
-    ldi temp,decrement_cursor
+    ldi temp,set_cursor_shift_left
     rcall send_command
 
     ldi temp,' '
@@ -576,10 +577,10 @@ undo: ;; for deleting numbers
     ldi temp,entry_mode
     rcall send_command
 
-    ldi temp,increment_cursor
+    ldi temp,set_cursor_shift_right
     rcall send_command
 
-    ldi temp,0b00010100
+    ldi temp,shift_right
     rcall send_command
 return_undo:
     ret 
