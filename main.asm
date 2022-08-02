@@ -157,11 +157,8 @@ Start:            ; stack initialization
     cbi portc,portc2
     cbi ddrc,ddc2
 
-      SER R16
-      OUT DDRB,R16
-
-    ldi ZL,LOW(calculatorSign<<1)
-    ldi ZH,HIGH(calculatorSign<<1)
+    SER R16
+    OUT DDRB,R16    
     
     ldi temp,0
 
@@ -256,7 +253,7 @@ Initialization_LCD_HARDWARE:
     ldi temp,250
     rcall delayTx1mS
 
-    rcall reset_lcd
+    rcall reset_calc
 
     rcall reset_counter
 ;
@@ -356,7 +353,7 @@ next_key_row1_3:
 
       cpi temp,0
       brne return_from_row1 
-save_sign:
+save_sign_row1:
       ldi temp,'+'
       sts calculatorSign,temp
       rcall send_letter
@@ -407,9 +404,14 @@ next_key_row2_3:
       brne return_from_row2
       cpi counter,$10
       breq return_from_row2
-      add ZL,counter
+
+      lds temp,calculatorSign
+
+      cpi temp,0
+      brne return_from_row2
+save_sign_row2:
       ldi temp,'-'
-      st Z,temp
+      sts calculatorSign,temp
       rcall send_letter
 return_from_row2: 
       CBI PORTD,PORTD6
@@ -452,7 +454,14 @@ next_key_row3_3:
     brne return_from_row3
     cpi counter,$10
     breq return_from_row3
+
+    lds temp,calculatorSign
+
+    cpi temp,0
+    brne return_from_row3
+save_sign_row3:
     ldi temp,'*'
+    sts calculatorSign,temp
     rcall send_letter
 return_from_row3:
     CBI PORTD,PORTD5
@@ -488,7 +497,14 @@ next_key_row4_3:
     brne return_from_row4
     cpi counter,$10
     breq return_from_row4
+
+    lds temp,calculatorSign
+
+    cpi temp,0
+    brne return_from_row4
+save_sign_row4:
     ldi temp,0b11111101 ; / division
+    sts calculatorSign,temp
     rcall send_letter
 return_from_row4:
     CBI PORTD,PORTD4
@@ -498,16 +514,28 @@ check_reset:
     IN temp,PINC
     andi temp,$04
     brne return_from_reset
-    rcall reset_lcd
+    rcall reset_calc
 return_from_reset:
     ret
 
-reset_lcd: 
+reset_calc: 
     ldi temp,entry_mode     ; entry mode
     rcall send_command
 
     ldi temp,clear_display ; clear display instruction
     rcall send_command
+    
+    rcall reset_memory
+  
+    ret
+
+reset_memory:
+    ldi temp,0
+    ldi counter,0
+    sts calculatorInput1,temp
+    sts calculatorInput2,temp
+    sts calculatorSign,temp
+    sts calculatorOutput,temp
     ret
 
 print:
@@ -524,6 +552,9 @@ end_print_loop:
 reset_counter:
     ldi counter,0
     ret
+
+undo: ;; for deleting numbers
+    ret 
 
 jump_second_line_lcd:
     ldi temp,entry_mode
