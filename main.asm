@@ -40,6 +40,8 @@
 .equ display_on_with_cursor_blink=0b00001111
 .equ set_position_0=0b10000000
 .equ force_cursor_beginning_second_line=$C0
+.equ decrement_cursor=$04
+.equ increment_cursor=$06
 ; **********************************
 ;  F I X  &  D E R I V.  C O N S T
 ; **********************************
@@ -68,6 +70,7 @@
 calculatorInput1: .BYTE 16
 calculatorInput2: .BYTE 16
 calculatorSign: .BYTE 1
+calculatorSignIndex: .BYTE 1 ; to remember when we put sign! 
 calculatorOutput: .BYTE 16
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
@@ -474,6 +477,7 @@ check_row4:
     andi temp,$08 ; Clear button 
     cpi temp,$08 ; 
     brne next_key_row4_1 
+    rcall undo
 next_key_row4_1:
     IN temp,PIND
     andi temp,$04
@@ -554,6 +558,30 @@ reset_counter:
     ret
 
 undo: ;; for deleting numbers
+    ; ldi temp,0
+    ; cpi temp,0
+    ; breq return_undo
+
+
+    ldi temp,entry_mode
+    rcall send_command
+
+    ldi temp,decrement_cursor
+    rcall send_command
+
+    ldi temp,' '
+    rcall send_letter 
+    rcall send_letter
+
+    ldi temp,entry_mode
+    rcall send_command
+
+    ldi temp,increment_cursor
+    rcall send_command
+
+    ldi temp,0b00010100
+    rcall send_command
+return_undo:
     ret 
 
 jump_second_line_lcd:
