@@ -313,16 +313,22 @@ send_letter:
       ret
 
 save_number_input_buffer:
+	ldi YL,LOW(calculatorInput1)
+	ldi YH,HIGH(calculatorInput1)
+	add YL,counter
     push temp
     lds temp,calculatorSign
     cpi temp,0
     brne save_number_input2
     pop temp
-    sts calculatorInput1+counter,temp
+    st Y,temp
     ret
 save_number_input2:
+	ldi YL,LOW(calculatorInput2)
+	ldi YH,HIGH(calculatorInput2)
+	add YL,counter
     pop temp
-    sts calculatorInput2+counter,temp
+    st Y,temp
     ret
 
 check_row1:
@@ -389,9 +395,7 @@ check_row2:
       brne next_key_row2_1
       cpi counter,$10
       breq return_from_row2
-      add ZL,counter
       ldi temp,'4'
-      st Z,temp
       rcall send_letter
 next_key_row2_1:
       IN temp,PIND
@@ -400,9 +404,7 @@ next_key_row2_1:
       brne next_key_row2_2
       cpi counter,$10
       breq return_from_row2
-      add ZL,counter
       ldi temp,'5'
-      st Z,temp
       rcall send_letter
 next_key_row2_2:
       IN temp,PIND
@@ -411,9 +413,7 @@ next_key_row2_2:
       brne next_key_row2_3
       cpi counter,$10
       breq return_from_row2
-      add ZL,counter
       ldi temp,'6'
-      st Z,temp
       rcall send_letter
 next_key_row2_3:
       IN temp,PIND
@@ -532,6 +532,7 @@ return_from_row4:
 check_reset:
     IN temp,PINC
     andi temp,$04
+	cpi temp,$04
     brne return_from_reset
     rcall reset_calc
 return_from_reset:
@@ -573,7 +574,7 @@ reset_counter:
     ret
 
 undo: ;; for deleting numbers
-    ldi temp,counter
+    mov temp,counter
     cpi counter,0
     breq return_undo ;; if counter is 0 ... Beginning of the screen
 
