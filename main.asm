@@ -53,6 +53,7 @@
 .def rSreg = R15 ; Save/Restore status port
 .def temp = R16 ; Define multipurpose register
 .def zero = R17 
+.def counter = R18 
 ; free: R17 to R29
 ; free: R31:R30 = Z
 ;
@@ -72,13 +73,14 @@
 ; **********************************
 ;
 .cseg
-.org 000000
+.org 0
 author: 
 .db "Patryk Kurek",0x00
+calculatorString:  
+.db "Avr Calculator",0x00
 
-calculatorString:   ;; here is some sort of issue 
-.db "Avr calculator",0x00
-;
+calculatorInput: .BYTE 16
+calculatorOutput: .BYTE 16
 ; **********************************
 ; R E S E T  &  I N T - V E C T O R S
 ; **********************************
@@ -126,10 +128,10 @@ Start:            ; stack initialization
       out SPL,temp
       ldi temp,high(RAMEND)
       out SPH,temp
-                 ;;;;;;;;;;;;;;;;;;;;;;;;;
-                 ; initialization of pd0->pd7 (DATA BUS) to output mode
-                 ; initialization of pb0->pb1 (R/W AND ENABLE PIN) to output mode
-                 ; initialization of pd0->pd4 to output mode
+        ;;;;;;;;;;;;;;;;;;;;;;;;;
+        ; initialization of pd0->pd7 (DATA BUS) to output mode
+        ; initialization of pb0->pb1 (R/W AND ENABLE PIN) to output mode
+        ; initialization of pd0->pd4 to output mode
       SBI DDRC,DDC0
       SBI DDRC,DDC1
 
@@ -234,10 +236,15 @@ Initialization_LCD_HARDWARE:
 
     rcall reset_lcd
 
-    ldi ZL, low(calculatorString)
-    ldi ZH, high(calculatorString)
+    ldi ZL, low(calculatorString<<1) ;  word alignment
+    ldi ZH, high(calculatorString<<1)
 
     rcall print
+
+    ldi temp,250
+    rcall delayTx1mS
+
+    rcall reset_lcd
 ;
 ; **********************************
 ;    P R O G R A M   L O O P
@@ -275,12 +282,12 @@ clear_enable:
     cbi PORTC,PORTC1
     ret
 send_command:    
-      out PORTB,temp
-      rcall clear_enable
-      rcall enable
-      ldi temp,80
-      rcall delayTx1uS
-      ret
+    out PORTB,temp
+    rcall clear_enable
+    rcall enable
+    ldi temp,80
+    rcall delayTx1uS
+    ret
 
 send_letter:
       out PORTB,temp
@@ -450,9 +457,6 @@ print:
     rcall delayTx1mS
     rjmp print
 end_print_loop:
-    ret
-
-menu:
     ret
 
 delayTx1mS:
