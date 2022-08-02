@@ -1,8 +1,8 @@
 ;
 ; ***********************************
-; * (Add program task here)         *
-; * (Add AVR type and version here) *
-; * (C)2021 by Gerhard Schmidt      *
+; * Avr Calculator       *
+; * Atmega88PA *
+; * (C)2022 by Patryk Kurek  *
 ; ***********************************
 ;
 .nolist
@@ -28,8 +28,6 @@
 ;   A D J U S T A B L E   C O N S T
 ; **********************************
 ;
-; (Add all user adjustable constants here, e.g.)
-; .equ clock=1000000 ; Define the clock frequency
 ;
 .equ fclk=16000000
 .equ reset=0b00110000
@@ -304,7 +302,8 @@ send_command:
     rcall delayTx1uS
     ret
 
-send_letter:
+send_letter:    
+      inc counter
       out PORTB,temp
       sbi PORTC,PORTC0
       sbi PORTC,PORTC1
@@ -312,6 +311,19 @@ send_letter:
       cbi PORTC,PORTC1
       rcall delay1uS
       ret
+
+save_number_input_buffer:
+    push temp
+    lds temp,calculatorSign
+    cpi temp,0
+    brne save_number_input2
+    pop temp
+    sts calculatorInput1+counter,temp
+    ret
+save_number_input2:
+    pop temp
+    sts calculatorInput2+counter,temp
+    ret
 
 check_row1:
       sbi PORTD,PORTD7
@@ -323,6 +335,7 @@ check_row1:
       cpi counter,$10
       breq return_from_row1
       ldi temp,'1'
+      rcall save_number_input_buffer
       rcall send_letter
       
 next_key_row1_1:
@@ -333,6 +346,7 @@ next_key_row1_1:
       cpi counter,$10
       breq return_from_row1
       ldi temp,'2'
+      rcall save_number_input_buffer
       rcall send_letter
 
 next_key_row1_2:
@@ -559,10 +573,11 @@ reset_counter:
     ret
 
 undo: ;; for deleting numbers
-    ; ldi temp,0
-    ; cpi temp,0
-    ; breq return_undo
+    ldi temp,counter
+    cpi counter,0
+    breq return_undo ;; if counter is 0 ... Beginning of the screen
 
+    dec counter
 
     ldi temp,entry_mode
     rcall send_command
