@@ -39,6 +39,7 @@
 .equ entry_mode=0b00000110
 .equ display_on_with_cursor_blink=0b00001111
 .equ set_position_0=0b10000000
+.equ force_cursor_beginning_second_line=$C0
 ; **********************************
 ;  F I X  &  D E R I V.  C O N S T
 ; **********************************
@@ -63,6 +64,11 @@
 ;
 .dseg
 .org SRAM_START
+
+calculatorInput1: .BYTE 16
+calculatorInput2: .BYTE 16
+calculatorSign: .BYTE 1
+calculatorOutput: .BYTE 16
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
 
@@ -78,9 +84,6 @@ author:
 .db "Patryk Kurek",0x00
 calculatorString:  
 .db "Avr Calculator",0x00
-
-calculatorInput: .BYTE 16
-calculatorOutput: .BYTE 16
 ; **********************************
 ; R E S E T  &  I N T - V E C T O R S
 ; **********************************
@@ -156,6 +159,13 @@ Start:            ; stack initialization
 
       SER R16
       OUT DDRB,R16
+
+    ldi ZL,LOW(calculatorSign<<1)
+    ldi ZH,HIGH(calculatorSign<<1)
+    
+    ldi temp,0
+
+    st Z,temp
                  ;;;;;;;;;;;;;;;;;;;;;;;;;
                  ;;;;;
 Initialization_LCD_HARDWARE:
@@ -234,7 +244,7 @@ Initialization_LCD_HARDWARE:
     ldi temp,250
     rcall delayTx1mS
 
-    rcall reset_lcd
+    rcall jump_second_line_lcd
 
     ldi ZL, low(calculatorString<<1) ;  word alignment
     ldi ZH, high(calculatorString<<1)
@@ -245,12 +255,15 @@ Initialization_LCD_HARDWARE:
     rcall delayTx1mS
 
     rcall reset_lcd
+
+    rcall reset_counter
 ;
 ; **********************************
 ;    P R O G R A M   L O O P
 ; **********************************
 ;
 Loop:
+
     rcall check_row1
     ldi temp,3
     rcall delayTx1mS
@@ -270,7 +283,6 @@ Loop:
     rcall check_reset
 
     rjmp Loop
-
 enable:
     sbi PORTC,PORTC1
     rcall delay1uS
@@ -305,28 +317,49 @@ check_row1:
       ANDI temp,$08
       cpi temp,$08
       brne next_key_row1_1
-      ldi temp,0b00110001
+      cpi counter,$10
+      breq return_from_row1
+      ldi temp,'1'
       rcall send_letter
+      
 next_key_row1_1:
       IN temp,PIND
       ANDI temp,$04
       cpi temp,$04
       brne next_key_row1_2
-      ldi temp,0b00110010
+      cpi counter,$10
+      breq return_from_row1
+      ldi temp,'2'
       rcall send_letter
+
 next_key_row1_2:
       IN temp,PIND
       ANDI temp,$02
       cpi temp,$02
       brne next_key_row1_3
-      ldi temp,0b00110011
+      cpi counter,$10
+      breq return_from_row1
+      ldi temp,'3'
       rcall send_letter
+      
 next_key_row1_3: 
       IN temp,PIND 
       ANDI temp,$01
       cpi temp,$01
       brne return_from_row1
-      ldi temp,0b00101011
+      cpi counter,$10
+      breq return_from_row1
+      
+      ldi ZL,LOW(calculatorSign<<1)
+      ldi ZH,HIGH(calculatorSign<<1)
+
+      lpm temp,Z
+
+      cpi temp,0
+      brne return_from_row1 
+save_sign:
+      ldi temp,'+'
+      st Z,temp
       rcall send_letter
 return_from_row1:
       cbi PORTD,PORTD7
@@ -340,28 +373,44 @@ check_row2:
       ANDI temp,$08
       cpi temp,$08
       brne next_key_row2_1
-      ldi temp,0b00110100
+      cpi counter,$10
+      breq return_from_row2
+      add ZL,counter
+      ldi temp,'4'
+      st Z,temp
       rcall send_letter
 next_key_row2_1:
       IN temp,PIND
       ANDI temp,$04
       CPI temp,$04
       brne next_key_row2_2
-      ldi temp,0b00110101
+      cpi counter,$10
+      breq return_from_row2
+      add ZL,counter
+      ldi temp,'5'
+      st Z,temp
       rcall send_letter
 next_key_row2_2:
       IN temp,PIND
       ANDI temp,$02
       CPI temp,$02
       brne next_key_row2_3
-      ldi temp,0b00110110
+      cpi counter,$10
+      breq return_from_row2
+      add ZL,counter
+      ldi temp,'6'
+      st Z,temp
       rcall send_letter
 next_key_row2_3:
       IN temp,PIND
       ANDI temp,$01
       CPI temp,$01
       brne return_from_row2
-      ldi temp,0b00101101
+      cpi counter,$10
+      breq return_from_row2
+      add ZL,counter
+      ldi temp,'-'
+      st Z,temp
       rcall send_letter
 return_from_row2: 
       CBI PORTD,PORTD6
@@ -375,28 +424,36 @@ check_row3:
     ANDI temp,$08
     CPI temp,$08
     brne next_key_row3_1
-    ldi temp,0b00110111
+    cpi counter,$10
+    breq return_from_row3
+    ldi temp,'7'
     rcall send_letter
 next_key_row3_1:
     in temp,PIND
     ANDI temp,$04
     CPI temp,$04
     brne next_key_row3_2
-    ldi temp,0b00111000
+    cpi counter,$10
+    breq return_from_row3
+    ldi temp,'8'
     rcall send_letter
 next_key_row3_2:
     in temp,PIND
     andi temp,$02
     cpi temp,$02
     brne next_key_row3_3
-    ldi temp,0b00111001
+    cpi counter,$10
+    breq return_from_row3
+    ldi temp,'9'
     rcall send_letter
 next_key_row3_3:
     in temp,PIND
     andi temp,$01
     cpi temp,$01
     brne return_from_row3
-    ldi temp,0b00101010
+    cpi counter,$10
+    breq return_from_row3
+    ldi temp,'*'
     rcall send_letter
 return_from_row3:
     CBI PORTD,PORTD5
@@ -414,19 +471,25 @@ next_key_row4_1:
     andi temp,$04
     cpi temp,$04
     brne next_key_row4_2
-    ldi temp,0b00110000
+    cpi counter,$10
+    breq return_from_row4
+    ldi temp,'0'
     rcall send_letter
 next_key_row4_2:
     IN temp,PIND
     andi temp,$02
     cpi temp,$02 ; Equal button
     brne next_key_row4_3
+    cpi counter,$10
+    breq return_from_row4
 next_key_row4_3:
     IN temp,PIND
     andi temp,$01
     cpi temp,$01
     brne return_from_row4
-    ldi temp,0b11111101
+    cpi counter,$10
+    breq return_from_row4
+    ldi temp,0b11111101 ; / division
     rcall send_letter
 return_from_row4:
     CBI PORTD,PORTD4
@@ -458,6 +521,20 @@ print:
     rjmp print
 end_print_loop:
     ret
+
+reset_counter:
+    ldi counter,0
+    ret
+
+jump_second_line_lcd:
+    ldi temp,entry_mode
+    rcall send_command
+
+    ldi temp,force_cursor_beginning_second_line
+    rcall send_command
+    ret
+
+    
 
 delayTx1mS:
     rcall delay1mS
