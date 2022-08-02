@@ -129,30 +129,30 @@ calculatorString:
 
 Main:
 Start:            ; stack initialization
-      ldi temp,low(RAMEND)
-      out SPL,temp
-      ldi temp,high(RAMEND)
-      out SPH,temp
+    ldi temp,low(RAMEND)
+    out SPL,temp
+    ldi temp,high(RAMEND)
+    out SPH,temp
         ;;;;;;;;;;;;;;;;;;;;;;;;;
         ; initialization of pd0->pd7 (DATA BUS) to output mode
         ; initialization of pb0->pb1 (R/W AND ENABLE PIN) to output mode
         ; initialization of pd0->pd4 to output mode
-      SBI DDRC,DDC0
-      SBI DDRC,DDC1
+    SBI DDRC,DDC0
+    SBI DDRC,DDC1
 
 
       ;;;;;;;;;;;; ENABLING FIRST BITS FOR KEYBOARD AS OUTPUT
-      SBI DDRD,DDD7
-      SBI DDRD,DDD6
-      SBI DDRD,DDD5
-      SBI DDRD,DDD4
+    SBI DDRD,DDD7
+    SBI DDRD,DDD6
+    SBI DDRD,DDD5
+    SBI DDRD,DDD4
       ;;;;;;;;;;;;;;;;;;;    
      ;;;;;;;;;;;;; ENABLING BITS FOR KEYBOARD AS AN INPUT
-      CBI DDRD,DDD3
-      CBI DDRD,DDD2
-      CBI DDRD,DDD1
-      CBI DDRD,DDD0
-     ;;;;;;;;;;;;;
+    CBI DDRD,DDD3
+    CBI DDRD,DDD2
+    CBI DDRD,DDD1
+    CBI DDRD,DDD0
+    ;;;;;;;;;;;;
 
 
     ;;; reset pinc2 for reset button
@@ -170,72 +170,72 @@ Start:            ; stack initialization
                  ;;;;;;;;;;;;;;;;;;;;;;;;;
                  ;;;;;
 Initialization_LCD_HARDWARE:
-      ldi zero,0
+    ldi zero,0
 
-      ldi temp,200
-      rcall delayTx1mS
+    ldi temp,200
+    rcall delayTx1mS
 
       ; first part of reset sequence
 
-      ldi temp,reset  ; reset LCD
-      out PORTB,temp
-      rcall clear_enable
-      rcall enable
-      ldi temp,10
-      rcall delayTx1mS
+    ldi temp,reset  ; reset LCD
+    out PORTB,temp
+    rcall clear_enable
+    rcall enable
+    ldi temp,10
+    rcall delayTx1mS
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ; second part of reset sequence
-      ldi temp,reset
-      out PORTB,temp
-      rcall clear_enable
-      rcall enable
-      ldi temp,200
-      rcall delayTx1uS
+    ldi temp,reset
+    out PORTB,temp
+    rcall clear_enable
+    rcall enable
+    ldi temp,200
+    rcall delayTx1uS
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ; Third part of reset sequence
-      ldi temp,reset
-      out PORTB,temp
-      rcall clear_enable
-      rcall enable
-      ldi temp,200
-      rcall delayTx1uS
+    ldi temp,reset
+    out PORTB,temp
+    rcall clear_enable
+    rcall enable
+    ldi temp,200
+    rcall delayTx1uS
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
       ; set mode lines and font
-      ldi temp,font_and_lines
-      rcall send_command
+    ldi temp,font_and_lines
+    rcall send_command
       ;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ; Display On/Off Control instruction
-      ldi temp,display_off        ;; DISPLAY OFF
-      rcall send_command
+    ldi temp,display_off        ;; DISPLAY OFF
+    rcall send_command
 
 
-      ldi temp,clear_display ; clear display instruction
-      rcall send_command
+    ldi temp,clear_display ; clear display instruction
+    rcall send_command
 
 
-      ldi temp,entry_mode     ; entry mode
-      rcall send_command
+    ldi temp,entry_mode     ; entry mode
+    rcall send_command
 
 
-      ldi temp,display_on_with_cursor_blink ; turn display on enable cursor and blink ;)
-      rcall send_command
+    ldi temp,display_on_with_cursor_blink ; turn display on enable cursor and blink ;)
+    rcall send_command
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;; WRITING SCREEN!
 
-      ldi temp,set_position_0 ; SET POSITION OF CURSOR
-      out PORTB,temp
-      rcall clear_enable
-      rcall enable
-      ldi temp,80
-      rcall delayTx1uS
+    ldi temp,set_position_0 ; SET POSITION OF CURSOR
+    out PORTB,temp
+    rcall clear_enable
+    rcall enable
+    ldi temp,80
+    rcall delayTx1uS
 
     ldi ZL, low(author)
     ldi ZH, high(author)
@@ -303,14 +303,14 @@ send_command:
     ret
 
 send_letter:    
-      inc counter
-      out PORTB,temp
-      sbi PORTC,PORTC0
-      sbi PORTC,PORTC1
-      rcall delay1uS
-      cbi PORTC,PORTC1
-      rcall delay1uS
-      ret
+    inc counter
+    out PORTB,temp
+    sbi PORTC,PORTC0
+    sbi PORTC,PORTC1
+    rcall delay1uS
+    cbi PORTC,PORTC1
+    rcall delay1uS
+    ret
 
 save_number_input_buffer:
 	ldi YL,LOW(calculatorInput1)
@@ -332,108 +332,114 @@ save_number_input2:
     ret
 
 check_row1:
-      sbi PORTD,PORTD7
-      rcall delay1mS
-      IN temp,PIND
-      ANDI temp,$08
-      cpi temp,$08
-      brne next_key_row1_1
-      cpi counter,$10
-      breq return_from_row1
-      ldi temp,'1'
-      rcall save_number_input_buffer
-      rcall send_letter
+    sbi PORTD,PORTD7
+    rcall delay1mS
+    IN temp,PIND
+    ANDI temp,$08
+    cpi temp,$08
+    brne next_key_row1_1
+    cpi counter,$10
+    breq return_from_row1
+    ldi temp,'1'
+    rcall save_number_input_buffer
+    rcall send_letter
       
 next_key_row1_1:
-      IN temp,PIND
-      ANDI temp,$04
-      cpi temp,$04
-      brne next_key_row1_2
-      cpi counter,$10
-      breq return_from_row1
-      ldi temp,'2'
-      rcall save_number_input_buffer
-      rcall send_letter
+    IN temp,PIND
+    ANDI temp,$04
+    cpi temp,$04
+    brne next_key_row1_2
+    cpi counter,$10
+    breq return_from_row1
+    ldi temp,'2'
+    rcall save_number_input_buffer
+    rcall send_letter
 
 next_key_row1_2:
-      IN temp,PIND
-      ANDI temp,$02
-      cpi temp,$02
-      brne next_key_row1_3
-      cpi counter,$10
-      breq return_from_row1
-      ldi temp,'3'
-      rcall send_letter
+    IN temp,PIND
+    ANDI temp,$02
+    cpi temp,$02
+    brne next_key_row1_3
+    cpi counter,$10
+    breq return_from_row1
+    ldi temp,'3'
+    rcall save_number_input_buffer
+    rcall send_letter
       
 next_key_row1_3: 
-      IN temp,PIND 
-      ANDI temp,$01
-      cpi temp,$01
-      brne return_from_row1
-      cpi counter,$10
-      breq return_from_row1
+    IN temp,PIND 
+    ANDI temp,$01
+    cpi temp,$01
+    brne return_from_row1
+    cpi counter,$10
+    breq return_from_row1
       
-	  lds temp,calculatorSign
+	lds temp,calculatorSign
 
-      cpi temp,0
-      brne return_from_row1 
+    cpi temp,0
+    brne return_from_row1 
 save_sign_row1:
-      ldi temp,'+'
-      sts calculatorSign,temp
-      rcall send_letter
+    ldi temp,'+'
+    sts calculatorSign,temp
+    rcall send_letter
+    ldi counter,0 ; no erasable sign for now!!!
 return_from_row1:
-      cbi PORTD,PORTD7
-      ret
+    cbi PORTD,PORTD7
+    ret
 
 
 check_row2:
-      sbi PORTD,PORTD6
-      rcall delay1mS
-      IN temp,PIND
-      ANDI temp,$08
-      cpi temp,$08
-      brne next_key_row2_1
-      cpi counter,$10
-      breq return_from_row2
-      ldi temp,'4'
-      rcall send_letter
+    sbi PORTD,PORTD6
+    rcall delay1mS
+    IN temp,PIND
+    ANDI temp,$08
+    cpi temp,$08
+    brne next_key_row2_1
+    cpi counter,$10
+    breq return_from_row2
+    ldi temp,'4'
+    rcall save_number_input_buffer
+    rcall send_letter
 next_key_row2_1:
-      IN temp,PIND
-      ANDI temp,$04
-      CPI temp,$04
-      brne next_key_row2_2
-      cpi counter,$10
-      breq return_from_row2
-      ldi temp,'5'
-      rcall send_letter
+    IN temp,PIND
+    ANDI temp,$04
+    CPI temp,$04
+    brne next_key_row2_2
+    cpi counter,$10
+    breq return_from_row2
+    ldi temp,'5'
+    rcall save_number_input_buffer
+    rcall send_letter
 next_key_row2_2:
-      IN temp,PIND
-      ANDI temp,$02
-      CPI temp,$02
-      brne next_key_row2_3
-      cpi counter,$10
-      breq return_from_row2
-      ldi temp,'6'
-      rcall send_letter
+    IN temp,PIND
+    ANDI temp,$02
+    CPI temp,$02
+    brne next_key_row2_3
+    cpi counter,$10
+    breq return_from_row2
+    ldi temp,'6'
+    rcall save_number_input_buffer
+    rcall send_letter
 next_key_row2_3:
-      IN temp,PIND
-      ANDI temp,$01
-      CPI temp,$01
-      brne return_from_row2
-      cpi counter,$10
-      breq return_from_row2
+    IN temp,PIND
+    ANDI temp,$01
+    CPI temp,$01
+    brne return_from_row2
+    cpi counter,$10
+    breq return_from_row2
 
-      lds temp,calculatorSign
+    lds temp,calculatorSign
 
-      cpi temp,0
-      brne return_from_row2
+    cpi temp,0
+    brne return_from_row2
 save_sign_row2:
-      ldi temp,'-'
-      sts calculatorSign,temp
-      rcall send_letter
+    ldi temp,'-'
+    sts calculatorSign,temp
+    rcall send_letter
+    ldi counter,0 ; no erasable sign for now!!!
 return_from_row2: 
-      CBI PORTD,PORTD6
-      ret 
+    CBI PORTD,PORTD6
+    ret 
 
 
 check_row3:
@@ -446,6 +452,7 @@ check_row3:
     cpi counter,$10
     breq return_from_row3
     ldi temp,'7'
+    rcall save_number_input_buffer
     rcall send_letter
 next_key_row3_1:
     in temp,PIND
@@ -455,6 +462,7 @@ next_key_row3_1:
     cpi counter,$10
     breq return_from_row3
     ldi temp,'8'
+    rcall save_number_input_buffer
     rcall send_letter
 next_key_row3_2:
     in temp,PIND
@@ -464,6 +472,7 @@ next_key_row3_2:
     cpi counter,$10
     breq return_from_row3
     ldi temp,'9'
+    rcall save_number_input_buffer
     rcall send_letter
 next_key_row3_3:
     in temp,PIND
@@ -481,6 +490,7 @@ save_sign_row3:
     ldi temp,'*'
     sts calculatorSign,temp
     rcall send_letter
+    ldi counter,0 ; no erasable sign for now!!!
 return_from_row3:
     CBI PORTD,PORTD5
     ret
@@ -501,6 +511,7 @@ next_key_row4_1:
     cpi counter,$10
     breq return_from_row4
     ldi temp,'0'
+    rcall save_number_input_buffer
     rcall send_letter
 next_key_row4_2:
     IN temp,PIND
@@ -525,6 +536,7 @@ save_sign_row4:
     ldi temp,0b11111101 ; / division
     sts calculatorSign,temp
     rcall send_letter
+    ldi counter,0 ; no erasable sign for now!!!
 return_from_row4:
     CBI PORTD,PORTD4
     ret
@@ -532,8 +544,7 @@ return_from_row4:
 check_reset:
     IN temp,PINC
     andi temp,$04
-	cpi temp,$04
-    brne return_from_reset
+    brne return_from_reset ; lol it should be cpi i guess... 
     rcall reset_calc
 return_from_reset:
     ret
@@ -574,6 +585,12 @@ reset_counter:
     ret
 
 undo: ;; for deleting numbers
+     
+    lds temp,calculatorSign
+    cpi temp,0
+    brne undo_1
+
+undo_1:
     mov temp,counter
     cpi counter,0
     breq return_undo ;; if counter is 0 ... Beginning of the screen
@@ -589,6 +606,10 @@ undo: ;; for deleting numbers
     ldi temp,' '
     rcall send_letter 
     rcall send_letter
+
+    ldi temp,2;
+
+    sub counter,temp
 
     ldi temp,entry_mode
     rcall send_command
