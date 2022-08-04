@@ -71,6 +71,8 @@ calculatorInput2: .BYTE 16
 calculatorSign: .BYTE 1
 calculatorSignIndex: .BYTE 1 ; to remember when we put sign! 
 calculatorOutput: .BYTE 16
+calculatorInput1Length: .BYTE 1
+calculatorInput2Length: .BYTE 1 
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
 
@@ -519,6 +521,7 @@ next_key_row4_2:
     cpi temp,$02 ; Equal button
     brne next_key_row4_3
     cpi counter,$10
+    rcall calculate
     breq return_from_row4
 next_key_row4_3:
     IN temp,PIND
@@ -621,6 +624,32 @@ undo_1:
     rcall send_command
 return_undo:
     ret 
+
+calculate:
+    lds temp,calculatorSign
+    cpi temp,'+'
+    breq addition
+    ret
+addition:
+count_input1:
+    lds temp,calculatorInput1Length
+    inc temp
+    sts calculatorInput1Length,temp
+    ldi ZL, low(calculatorInput1<<1) ;  word alignment
+    ldi ZH, high(calculatorInput1<<1) 
+    lpm temp,Z+
+    cpi temp,0 
+    brne count_input1
+count_input2:
+    lds temp,calculatorInput2Length
+    inc temp
+    sts calculatorInput2Length,temp
+    ldi ZL, low(calculatorInput2<<1) ;  word alignment
+    ldi ZH, high(calculatorInput2<<1)
+    lpm temp,Z+
+    cpi temp,0
+    brne count_input2 
+    ret
 
 jump_second_line_lcd:
     ldi temp,entry_mode
