@@ -41,6 +41,10 @@
 .equ set_cursor_shift_left=$04
 .equ set_cursor_shift_right=$06
 .equ shift_right=0b00010100
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Numbers -> as a strings
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ; **********************************
 ;  F I X  &  D E R I V.  C O N S T
 ; **********************************
@@ -69,7 +73,7 @@
 calculatorInput1: .BYTE 16
 calculatorInput2: .BYTE 16
 calculatorSign: .BYTE 1
-calculatorSignIndex: .BYTE 1 ; to remember when we put sign! 
+; calculatorSignIndex: .BYTE 1 ; to remember when we put sign! 
 calculatorOutput: .BYTE 16
 calculatorInput1Length: .BYTE 1
 calculatorInput2Length: .BYTE 1 
@@ -653,8 +657,7 @@ calculate:
     breq addition
     ret
 addition:
-    ldi ZL, low(calculatorInput1) 
-    ldi ZH, high(calculatorInput1)
+    rcall translate_string_to_numbers
     ret
 
 jump_second_line_lcd:
@@ -665,6 +668,87 @@ jump_second_line_lcd:
     rcall send_command
     ret
 
+translate_string_to_numbers: 
+    ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+    ldi counter,0
+translate_string_to_numbers_loop:
+    add YL,counter
+    ld temp,Y
+    cpi temp,0
+    breq return_translate_string_to_numbers
+    cpi temp,'0'
+    breq swap_zero
+    cpi temp,'1'
+    breq swap_one
+    cpi temp,'2'
+    breq swap_two
+    cpi temp,'3'
+    breq swap_three
+    cpi temp,'4'
+    breq swap_four
+    cpi temp,'5'
+    breq swap_five
+    cpi temp,'6'
+    breq swap_six
+    cpi temp,'7'
+    breq swap_seven
+    cpi temp,'8'
+    breq swap_eight
+    cpi temp,'9'
+    breq swap_nine
+swap_zero:
+    ldi temp,0
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+swap_one:
+    ldi temp,1
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+swap_two:
+    ldi temp,2
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+swap_three:
+    ldi temp,3
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+swap_four:
+    ldi temp,4
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+swap_five:
+    ldi temp,5
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+swap_six:
+    ldi temp,6
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+swap_seven:
+    ldi temp,7
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop 
+swap_eight:
+    ldi temp,8
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+swap_nine:
+    ldi temp,9
+    st Y,temp
+    inc counter
+    rjmp translate_string_to_numbers_loop
+return_translate_string_to_numbers:
+    ret
     
 
 delayTx1mS:
