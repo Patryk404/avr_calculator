@@ -553,7 +553,7 @@ return_from_row4:
 check_reset:
     IN temp,PINC
     andi temp,$04
-	;cpi temp,$04 enable for debug!!!
+	;cpi temp,$04 ;enable for debug!!!
     brne return_from_reset ; lol it should be cpi i guess... 
     rcall reset_calc
 return_from_reset:
@@ -668,15 +668,17 @@ jump_second_line_lcd:
     rcall send_command
     ret
 
+
+
 translate_string_to_numbers: 
-    ldi YL,low(calculatorInput1)
-    ldi YH,high(calculatorInput1)
     ldi counter,0
 translate_string_to_numbers_loop:
+    ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
     add YL,counter
     ld temp,Y
     cpi temp,0
-    breq return_translate_string_to_numbers
+    breq translate_input2
     cpi temp,'0'
     breq swap_zero
     cpi temp,'1'
@@ -747,6 +749,86 @@ swap_nine:
     st Y,temp
     inc counter
     rjmp translate_string_to_numbers_loop
+
+translate_input2:
+    ldi counter,0
+loop_for_input2:
+	ldi YL,low(calculatorInput2)
+    ldi YH,high(calculatorInput2)
+    add YL,counter
+    ld temp,Y
+	cpi temp,0
+	breq return_translate_string_to_numbers
+	cpi temp,'0'
+    breq swap_zero_2
+    cpi temp,'1'
+    breq swap_one_2
+    cpi temp,'2'
+    breq swap_two_2
+    cpi temp,'3'
+    breq swap_three_2
+    cpi temp,'4'
+    breq swap_four_2
+    cpi temp,'5'
+    breq swap_five_2
+    cpi temp,'6'
+    breq swap_six_2
+    cpi temp,'7'
+    breq swap_seven_2
+    cpi temp,'8'
+    breq swap_eight_2
+    cpi temp,'9'
+    breq swap_nine_2
+swap_zero_2:
+    ldi temp,0
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_one_2:
+    ldi temp,1
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_two_2:
+    ldi temp,2
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_three_2:
+    ldi temp,3
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_four_2:
+    ldi temp,4
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_five_2:
+    ldi temp,5
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_six_2:
+    ldi temp,6
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_seven_2:
+    ldi temp,7
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_eight_2:
+    ldi temp,8
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
+swap_nine_2:
+    ldi temp,9
+    st Y,temp
+    inc counter
+    rjmp loop_for_input2
 return_translate_string_to_numbers:
     ret
     
@@ -781,4 +863,3 @@ delay1uS:
     push    R16                            ; [2]
     pop     R16                            ; [2]
     ret                                     ; [4]
-
