@@ -381,6 +381,7 @@ next_key_row1_3:
     cpi temp,0
     brne return_from_row1 
 save_sign_row1:
+	rcall save_counter
     ldi temp,'+'
     sts calculatorSign,temp
     rcall send_letter
@@ -521,6 +522,7 @@ next_key_row4_2:
     cpi temp,$02 ; Equal button
     brne next_key_row4_3
     cpi counter,$10
+	rcall save_counter
     rcall calculate
     breq return_from_row4
 next_key_row4_3:
@@ -547,10 +549,30 @@ return_from_row4:
 check_reset:
     IN temp,PINC
     andi temp,$04
+	;cpi temp,$04 enable for debug!!!
     brne return_from_reset ; lol it should be cpi i guess... 
     rcall reset_calc
 return_from_reset:
     ret
+
+
+save_counter: 
+	ldi ZL,low(calculatorSign)
+	ldi ZH,high(calculatorSign)
+	ld temp, Z
+	cpi temp,0
+	brne save_counter_calc_string2
+save_counter_calc_string1: 
+	ldi ZL,low(calculatorInput1Length)
+	ldi ZH,high(calculatorInput1Length)
+    st Z,counter
+	rjmp return_save_counter
+save_counter_calc_string2:
+	ldi ZL,low(calculatorInput2Length)
+	ldi ZH,high(calculatorInput2Length)
+	st Z,counter 
+return_save_counter:
+	ret
 
 reset_calc: 
     ldi temp,entry_mode     ; entry mode
@@ -631,24 +653,8 @@ calculate:
     breq addition
     ret
 addition:
-count_input1:
-    lds temp,calculatorInput1Length
-    inc temp
-    sts calculatorInput1Length,temp
-    ldi ZL, low(calculatorInput1<<1) ;  word alignment
-    ldi ZH, high(calculatorInput1<<1) 
-    lpm temp,Z+
-    cpi temp,0 
-    brne count_input1
-count_input2:
-    lds temp,calculatorInput2Length
-    inc temp
-    sts calculatorInput2Length,temp
-    ldi ZL, low(calculatorInput2<<1) ;  word alignment
-    ldi ZH, high(calculatorInput2<<1)
-    lpm temp,Z+
-    cpi temp,0
-    brne count_input2 
+    ldi ZL, low(calculatorInput1) 
+    ldi ZH, high(calculatorInput1)
     ret
 
 jump_second_line_lcd:
