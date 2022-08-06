@@ -59,7 +59,10 @@
 .def rSreg = R15 ; Save/Restore status port
 .def temp = R16 ; Define multipurpose register
 .def zero = R17 
-.def counter = R18 
+.def counter = R18
+.def temp1 = R19
+.def temp2 =R20 
+.def temp3 = R21
 ; free: R17 to R29
 ; free: R31:R30 = Z
 ;
@@ -77,6 +80,7 @@ calculatorSign: .BYTE 1
 calculatorOutput: .BYTE 16
 calculatorInput1Length: .BYTE 1
 calculatorInput2Length: .BYTE 1 
+calculatorOutputLength: .BYTE 1
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
 
@@ -658,6 +662,119 @@ calculate:
     ret
 addition:
     rcall translate_string_to_numbers
+	lds temp1,calculatorInput1Length
+	lds temp2,calculatorInput2Length
+	dec temp1
+	dec temp2
+	cp temp2,temp1
+	breq store_more_input1
+	cp temp2,temp1
+	brge store_more_input2
+store_more_input1:
+	sts calculatorOutputLength,temp1
+	cp temp1,temp2
+	breq same_length_input
+	rjmp more_length_input1
+store_more_input2:
+	sts calculatorOutputLength,temp2
+	rjmp more_length_input2
+more_length_input1:
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+    add YL,temp1
+    ld temp,Y
+	ldi XL,low(calculatorInput2) 
+	ldi XH,high(calculatorInput2)
+	add XL,temp2
+	ld temp3,X
+	clc
+	adc temp,temp3
+	ldi YL,low(calculatorOutput)
+	ldi YH,high(calculatorOutput)
+	add YL,temp1
+	st Y,temp
+	cpi temp2,0
+	dec temp1
+	breq more_length_input1_1
+	dec counter
+	dec temp2
+	rjmp more_length_input1
+more_length_input1_1:
+	lds counter,calculatorInput1Length
+more_length_input1_1_loop:
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+	add YL,temp1
+	ld temp,Y
+	ldi YH,high(calculatorOutput)
+	ldi YL,low(calculatorOutput)
+	add YL,temp1
+	st Y,temp
+	cpi temp1,0
+	breq exit_addition
+	dec temp1
+	rjmp more_length_input1_1_loop
+same_length_input:
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+    add YL,temp1
+    ld temp,Y
+	ldi XL,low(calculatorInput2) 
+	ldi XH,high(calculatorInput2)
+	add XL,temp2
+	ld temp3,X
+	clc
+	adc temp,temp3
+	ldi YL,low(calculatorOutput)
+	ldi YH,high(calculatorOutput)
+	add YL,temp1
+	st Y,temp
+	cpi temp1,0
+	breq exit_addition
+	dec temp1
+	dec counter
+	dec temp2
+	rjmp same_length_input
+more_length_input2:
+    ldi YL,low(calculatorInput2)
+    ldi YH,high(calculatorInput2)
+    add YL,temp2
+    ld temp,Y
+	ldi XL,low(calculatorInput1) 
+	ldi XH,high(calculatorInput1)
+	add XL,temp1
+	ld temp3,X
+	clc
+	adc temp,temp3
+	ldi YL,low(calculatorOutput)
+	ldi YH,high(calculatorOutput)
+	add YL,temp2
+	st Y,temp
+	cpi temp1,0
+	dec temp2
+	breq more_length_input2_1
+	dec counter
+	dec temp1
+	rjmp more_length_input2
+more_length_input2_1:
+	lds counter,calculatorInput2Length
+more_length_input2_1_loop:
+	ldi YL,low(calculatorInput2)
+	ldi YH,high(calculatorInput2)
+	add YL,temp2
+	ld temp,Y
+	ldi YH,high(calculatorOutput)
+	ldi YL,low(calculatorOutput)
+	add YL,temp2
+	st Y,temp
+	cpi temp1,0
+	breq exit_addition
+	dec temp1
+	rjmp more_length_input2_1_loop
+exit_addition:
+	rcall calculate_carry
+	rcall translate_numbers_to_string
+	rcall print_calculator_output
     ret
 
 jump_second_line_lcd:
@@ -668,7 +785,106 @@ jump_second_line_lcd:
     rcall send_command
     ret
 
-
+translate_numbers_to_string:
+	ldi counter,0
+	lds temp1,calculatorOutputLength
+translate_numbers_to_string_loop:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+    add YL,counter
+	ld temp,Y
+	cpi temp,0
+	breq translate_zero
+	cpi temp,1
+	breq translate_one
+	cpi temp,2
+	breq translate_two
+	cpi temp,3
+	breq translate_three
+	cpi temp,4
+	breq translate_four
+	cpi temp,5
+	breq translate_five
+	cpi temp,6
+	breq translate_six
+	cpi temp,7
+	breq translate_seven
+	cpi temp,8
+	breq translate_eight
+	cpi temp,9
+	breq translate_nine
+translate_zero:
+	ldi temp,'0'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_one:
+	ldi temp,'1'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_two:
+	ldi temp,'2'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_three:
+	ldi temp,'3'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_four:
+	ldi temp,'4'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_five:
+	ldi temp,'5'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_six:
+	ldi temp,'6'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_seven:
+	ldi temp,'7'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_eight:
+	ldi temp,'8'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string	
+	inc counter
+	rjmp translate_numbers_to_string_loop
+translate_nine:
+	ldi temp,'9'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string	
+	inc counter
+	rjmp translate_numbers_to_string_loop
+return_translate_numbers_to_string:
+	ret
 
 translate_string_to_numbers: 
     ldi counter,0
@@ -831,6 +1047,144 @@ swap_nine_2:
     rjmp loop_for_input2
 return_translate_string_to_numbers:
     ret
+
+print_calculator_output:
+	ldi temp,'='
+	rcall send_letter
+
+	rcall jump_second_line_lcd
+	
+	ldi temp,'='
+	rcall send_letter
+
+	ldi counter,0
+	lds temp1,calculatorOutputLength
+print_calculator_output_loop:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+    add YL,counter
+	ld temp,Y
+	rcall send_letter
+	cp counter,temp1
+	breq return_print_calculator_output
+	inc counter
+return_print_calculator_output:
+	ret 
+
+additional_label_to_return_from_carry_calculation:
+	rjmp return_calculate_carry
+calculate_carry:
+	lds counter,calculatorOutputLength
+	lds temp1,0
+loop_calculate_carry:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	clc 
+	adc YL,counter
+	ld temp,Y
+	cpi temp1,1
+	brne switches
+	inc temp
+switches:
+	cpi temp,$0A
+	breq switch_0A
+	cpi temp,$0B
+	breq switch_0B
+	cpi temp,$0C
+	breq switch_0C
+	cpi temp,$0D
+	breq switch_0D
+	cpi temp,$0E
+	breq switch_0E
+	cpi temp,$0F
+	breq switch_0F
+	cpi temp,$10
+	breq switch_10
+	cpi temp,$11
+	breq switch_11
+	cpi temp,$12
+	breq switch_12
+no_switch:
+	ldi temp1,0
+	cpi counter,0
+	st Y,temp
+	breq additional_label_to_return_from_carry_calculation
+	dec counter
+	rjmp loop_calculate_carry
+switch_0A:
+	ldi temp,0
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+switch_0B:
+	ldi temp,1
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+switch_0C:
+	ldi temp,2
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+switch_0D:
+	ldi temp,3
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+switch_0E:
+	ldi temp,4
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+switch_0F:
+	ldi temp,5
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+switch_10:
+	ldi temp,6
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+switch_11:
+	ldi temp,7
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+switch_12:
+	ldi temp,8
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry
+	dec counter
+	rjmp loop_calculate_carry
+return_calculate_carry:
+	ret
     
 
 delayTx1mS:
