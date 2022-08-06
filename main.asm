@@ -1059,6 +1059,7 @@ print_calculator_output:
 
 	ldi counter,0
 	lds temp1,calculatorOutputLength
+    inc temp1 ; this must be 
 print_calculator_output_loop:
 	ldi YL,low(calculatorOutput)
     ldi YH,high(calculatorOutput)
@@ -1067,7 +1068,7 @@ print_calculator_output_loop:
 	rcall send_letter
 	cp counter,temp1
 	breq return_print_calculator_output
-	inc counter
+    rjmp print_calculator_output_loop
 return_print_calculator_output:
 	ret 
 
