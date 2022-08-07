@@ -283,6 +283,7 @@ Loop:
     ldi temp,2
     rcall delayTx1mS
 
+
     rcall check_row3
     ldi temp,2
     rcall delayTx1mS
@@ -1209,7 +1210,7 @@ return_calculate_carry_shift:
     ldi YH,high(calculatorOutput)
 	ldi temp,1
 	st Y,temp
-	lds temp,calculatorOutput
+	lds temp,calculatorOutputLength
 	inc temp
 	sts calculatorOutputLength,temp
 	ret
