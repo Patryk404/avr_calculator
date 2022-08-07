@@ -1079,6 +1079,12 @@ print_calculator_output_loop:
 return_print_calculator_output:
 	ret 
 
+jump_switch_12:
+	rjmp switch_12
+jump_switch_13:
+	rjmp switch_13
+jump_shift_memory_calc_output:
+	rjmp shift_memory_calc_output
 additional_label_to_return_from_carry_calculation:
 	rjmp return_calculate_carry
 calculate_carry:
@@ -1111,7 +1117,9 @@ switches:
 	cpi temp,$11
 	breq switch_11
 	cpi temp,$12
-	breq switch_12
+	breq jump_switch_12  ; HERE GAVRASM DO NOT SHOW ANY ERROR!!! When we go switch_12
+	cpi temp,$13
+	breq jump_switch_13
 no_switch:
 	ldi temp1,0
 	cpi counter,0
@@ -1124,7 +1132,7 @@ switch_0A:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq shift_memory_calc_output
+	breq jump_shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_0B:
@@ -1185,6 +1193,14 @@ switch_11:
 	rjmp loop_calculate_carry
 switch_12:
 	ldi temp,8
+	ldi temp1,1
+	st Y,temp
+	cpi counter,0
+	breq shift_memory_calc_output
+	dec counter
+	rjmp loop_calculate_carry
+switch_13:
+	ldi temp,9
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
