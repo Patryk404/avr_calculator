@@ -279,7 +279,7 @@ Loop:
     ldi temp,2
     rcall delayTx1mS
 
-    rcall check_row2
+	rcall check_row2
     ldi temp,2
     rcall delayTx1mS
 
@@ -1123,7 +1123,7 @@ switch_0A:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_0B:
@@ -1131,7 +1131,7 @@ switch_0B:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_0C:
@@ -1139,7 +1139,7 @@ switch_0C:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_0D:
@@ -1147,7 +1147,7 @@ switch_0D:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_0E:
@@ -1155,7 +1155,7 @@ switch_0E:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_0F:
@@ -1163,7 +1163,7 @@ switch_0F:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_10:
@@ -1171,7 +1171,7 @@ switch_10:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_11:
@@ -1179,7 +1179,7 @@ switch_11:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
 switch_12:
@@ -1187,9 +1187,32 @@ switch_12:
 	ldi temp1,1
 	st Y,temp
 	cpi counter,0
-	breq return_calculate_carry
+	breq shift_memory_calc_output
 	dec counter
 	rjmp loop_calculate_carry
+shift_memory_calc_output:
+	lds counter,calculatorOutputLength
+shift_memory_calc_output_loop:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	clc 
+	adc YL,counter
+	ld temp,Y
+	inc YL
+	st Y,temp
+	cpi counter,0
+	breq return_calculate_carry_shift
+	dec counter
+	rjmp shift_memory_calc_output_loop
+return_calculate_carry_shift:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	ldi temp,1
+	st Y,temp
+	lds temp,calculatorOutput
+	inc temp
+	sts calculatorOutputLength,temp
+	ret
 return_calculate_carry:
 	ret
     
