@@ -276,19 +276,19 @@ Initialization_LCD_HARDWARE:
 Loop:
 
     rcall check_row1
-    ldi temp,3
+    ldi temp,2
     rcall delayTx1mS
 
     rcall check_row2
-    ldi temp,3
+    ldi temp,2
     rcall delayTx1mS
 
     rcall check_row3
-    ldi temp,3
+    ldi temp,2
     rcall delayTx1mS
 
     rcall check_row4
-    ldi temp,3
+    ldi temp,2
     rcall delayTx1mS
 
     rcall check_reset
@@ -595,11 +595,17 @@ reset_calc:
 
 reset_memory:
     ldi temp,0
+    ldi temp1,0
+    ldi temp2,0
+    ldi temp3,0
     ldi counter,0
     sts calculatorInput1,temp
     sts calculatorInput2,temp
     sts calculatorSign,temp
     sts calculatorOutput,temp
+    sts calculatorInput1Length,temp
+    sts calculatorInput2Length,temp
+    sts calculatorOutputLength,temp
     ret
 
 print:
