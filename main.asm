@@ -743,7 +743,7 @@ same_length_input:
 	dec temp2
 	rjmp same_length_input
 more_length_input2:
-    ldi YL,low(calculatorInput2)
+	ldi YL,low(calculatorInput2)
     ldi YH,high(calculatorInput2)
     add YL,temp2
     ld temp,Y
@@ -774,9 +774,9 @@ more_length_input2_1_loop:
 	ldi YL,low(calculatorOutput)
 	add YL,temp2
 	st Y,temp
-	cpi temp1,0
+	cpi temp2,0
 	breq exit_addition
-	dec temp1
+	dec temp2
 	rjmp more_length_input2_1_loop
 exit_addition:
 	rcall calculate_carry
