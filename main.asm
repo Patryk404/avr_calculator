@@ -274,7 +274,14 @@ Initialization_LCD_HARDWARE:
 ; **********************************
 ;
 Loop:
-
+    lds temp,calculatorOutput
+    cpi temp,$0
+    breq check_instructions
+    rcall press_any_key_check
+    ldi temp,2
+    rcall delayTx1mS
+    rjmp Loop
+check_instructions:
     rcall check_row1
     ldi temp,2
     rcall delayTx1mS
@@ -1232,8 +1239,28 @@ return_calculate_carry_shift:
 	ret
 return_calculate_carry:
 	ret
-    
 
+press_any_key_check:
+    sbi PORTD,PORTD7
+    sbi PORTD,PORTD6
+    sbi PORTD,PORTD5
+    rcall delay1mS
+    IN temp,PIND
+    ANDI temp,$0F
+    cpi temp,0
+    brne pressed_any_key
+    cbi PORTD,PORTD7
+    cbi PORTD,PORTD6
+    cbi PORTD,PORTD5
+    ret
+pressed_any_key:
+    rcall reset_calc
+    rcall reset_counter
+    rcall reset_memory
+    cbi PORTD,PORTD7
+    cbi PORTD,PORTD6
+    cbi PORTD,PORTD5
+    ret
 delayTx1mS:
     rcall delay1mS
     dec R16
