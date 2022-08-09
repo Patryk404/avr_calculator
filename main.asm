@@ -673,6 +673,8 @@ calculate:
     lds temp,calculatorSign
     cpi temp,'+'
     breq addition
+    cpi temp,'-'
+    breq subtraction
     ret
 addition:
     rcall translate_string_to_numbers
@@ -790,6 +792,19 @@ exit_addition:
 	rcall translate_numbers_to_string
 	rcall print_calculator_output
     ret
+subtraction:
+    rcall translate_string_to_numbers
+	lds temp1,calculatorInput1Length
+	lds temp2,calculatorInput2Length
+	dec temp1
+	dec temp2
+    cp temp1,temp2
+    brsh plus_subtraction
+    rjmp minus_subtraction
+plus_subtraction: ; here algorithm for that
+minus_subtraction: ; the same algorithm but you need to start from second input and add minus after operation!
+exit_subtraction:
+    ret 
 
 jump_second_line_lcd:
     ldi temp,entry_mode
