@@ -452,6 +452,7 @@ next_key_row2_3:
     cpi temp,0
     brne return_from_row2
 save_sign_row2:
+	rcall save_counter
     ldi temp,'-'
     sts calculatorSign,temp
     rcall send_letter
@@ -564,7 +565,7 @@ return_from_row4:
 
 check_reset:
     IN temp,PINC
-    andi temp,$04
+    andi temp,$046
 	;cpi temp,$04 ;enable for debug!!!
     brne return_from_reset ; lol it should be cpi i guess... 
     rcall reset_calc
@@ -669,12 +670,14 @@ undo_1:
 return_undo:
     ret 
 
+jump_subtraction:
+	rjmp subtraction
 calculate:
     lds temp,calculatorSign
     cpi temp,'+'
     breq addition
     cpi temp,'-'
-    breq subtraction
+    breq jump_subtraction
     ret
 addition:
     rcall translate_string_to_numbers
@@ -801,9 +804,51 @@ subtraction:
     cp temp1,temp2
     brsh plus_subtraction
     rjmp minus_subtraction
-plus_subtraction: ; here algorithm for that
+plus_subtraction: ; here some bugs need to rewrite it
+	sts calculatorOutputLength, temp1
+plus_subtraction_loop:
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+    add YL,temp1
+    ld temp,Y
+	ldi XL,low(calculatorInput2) 
+	ldi XH,high(calculatorInput2)
+	add XL,temp2
+	ld temp3,X
+	sub temp,temp3
+	ldi YL,low(calculatorOutput)
+	ldi YH,high(calculatorOutput)
+	add YL,temp1
+	st Y,temp
+	cpi temp2,0
+	breq plus_subtraction_1
+	dec temp2
+	dec temp1
+	rjmp plus_subtraction_loop
+plus_subtraction_1:
+	lds counter,calculatorInput1Length
+	cpi temp1,0
+	breq exit_subtraction
+	dec temp1
+plus_subtraction_1_loop:
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+	add YL,temp1
+	ld temp,Y
+	ldi YH,high(calculatorOutput)
+	ldi YL,low(calculatorOutput)
+	add YL,temp1
+	st Y,temp
+	cpi temp1,0
+	breq exit_subtraction
+	dec temp1
+	rjmp plus_subtraction_1_loop
 minus_subtraction: ; the same algorithm but you need to start from second input and add minus after operation!
 exit_subtraction:
+	rcall calculate_borrow
+	rcall shift_output_borrow ; not stable! it replace sign memory byte sometimes! keep this in mind
+	rcall translate_numbers_to_string
+	rcall print_calculator_output
     ret 
 
 jump_second_line_lcd:
@@ -1254,6 +1299,92 @@ return_calculate_carry_shift:
 	ret
 return_calculate_carry:
 	ret
+
+calculate_borrow:
+	ldi counter,0
+	lds temp3,calculatorOutputLength
+calculate_borrow_loop:	
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	clc
+	adc YL,counter
+	ld temp,Y
+	cp counter,temp3
+	breq exit_calculate_borrow
+check_borrow:
+	inc counter
+	inc YL
+	ld temp1,Y
+	push temp1
+	andi temp1,$F0
+	cpi temp1,$F0
+	breq borrow
+	pop temp1
+jump_loop:
+	dec counter
+	inc counter
+	rjmp calculate_borrow_loop
+borrow:
+	pop temp1
+	subi temp1,6
+	andi temp1,$0F
+	st Y,temp1
+	dec YL
+	dec temp
+	st Y,temp
+	rjmp jump_loop
+exit_calculate_borrow:
+	ret
+
+shift_output_borrow:
+	lds counter,calculatorOutputLength
+	ldi temp,0 ; counter for fields
+	ldi temp2,0 ; counter for how many shifts we need to use
+	ldi temp3,0
+	clc
+shift_output_borrow_loop:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	adc YL,temp
+	ld temp1,Y
+	cpi temp1,0
+	brne shift_left_loop
+add_shift:
+	inc temp2
+	inc temp 
+	rjmp shift_output_borrow_loop
+shift_left_loop:
+	cpi temp2,0
+	breq exit_shift
+	rcall shift_output_left
+	dec temp2
+	sub temp,temp3
+	dec temp
+	rjmp shift_left_loop
+exit_shift:
+	ret
+	
+shift_output_left:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	add YL,temp
+	ld temp1,Y
+	push temp1
+	ldi temp1,0
+	st Y,temp1
+	pop temp1
+	dec YL 
+	st Y,temp1
+	cp temp,counter
+	breq exit_shift_output_left
+	inc temp
+	inc temp3
+	rjmp shift_output_left
+exit_shift_output_left:
+	dec counter
+	sts calculatorOutputLength,counter
+	ret 
+
 
 press_any_key_check:
     sbi PORTD,PORTD7
