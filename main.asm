@@ -823,9 +823,11 @@ same_length_subtraction:
     cp temp,temp3
     brsh plus_subtraction
     rjmp minus_subtraction
+jump_output_zero:
+	rjmp output_zero
 same_length:
-    cpi counter,temp1
-    breq plus_subtraction
+    cp counter,temp1
+    breq jump_output_zero
     inc counter
     rjmp same_length_subtraction
 plus_subtraction: ; here some bugs need to rewrite it
@@ -908,6 +910,14 @@ minus_subtraction_1_loop:
 	breq exit_subtraction
 	dec temp2
 	rjmp minus_subtraction_1_loop
+output_zero:
+	ldi temp,0
+	sts calculatorOutputLength,temp
+	ldi temp,0
+	sts calculatorOutput,temp
+	rcall translate_numbers_to_string
+	rcall print_calculator_output
+	ret
 exit_subtraction:
 	rcall calculate_borrow
 	rcall shift_output_borrow ; not stable! it replace sign memory byte sometimes! keep this in mind
@@ -1524,4 +1534,4 @@ delay1uS:
     pop     R16                            ; [2]
     push    R16                            ; [2]
     pop     R16                            ; [2]
-    ret                                     ; [4]
+    ret                                     ; [4]               
