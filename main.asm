@@ -801,11 +801,32 @@ subtraction:
     rcall translate_string_to_numbers
 	lds temp1,calculatorInput1Length
 	lds temp2,calculatorInput2Length
+    ldi counter,0
 	dec temp1
 	dec temp2
     cp temp1,temp2
+    breq same_length_subtraction
+    cp temp1,temp2
     brsh plus_subtraction
     rjmp minus_subtraction
+same_length_subtraction:
+    ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+    add YL,counter
+    ldi XL,low(calculatorInput2)
+    ldi XH,high(calculatorInput2)
+    add XL,counter
+    ld temp,Y
+    ld temp3,X
+    cp temp,temp3
+    breq same_length
+    cp temp,temp3
+    brsh plus_subtraction
+    rjmp minus_subtraction
+same_length:
+    cpi counter,temp1
+    breq plus_subtraction
+    inc counter
 plus_subtraction: ; here some bugs need to rewrite it
 	sts calculatorOutputLength, temp1
 	rcall clear_output_sign
