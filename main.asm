@@ -81,6 +81,7 @@ calculatorOutput: .BYTE 16
 calculatorInput1Length: .BYTE 1
 calculatorInput2Length: .BYTE 1 
 calculatorOutputLength: .BYTE 1
+calculatorOutputSign: .BYTE 1 ; 1 -> means minus 0-> means plus
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
 
@@ -1385,6 +1386,21 @@ exit_shift_output_left:
 	sts calculatorOutputLength,counter
 	ret 
 
+setOutputSign: 
+    push temp
+    lds temp,calculatorOutputSign
+    ldi temp,1
+    sts calculatorOutputSign,temp
+    pop temp
+    ret
+
+clearOutputSign:
+    push temp
+    lds temp,calculatorOutputSign
+    ldi temp,0
+    sts calculatorOutputSign,temp
+    pop temp
+    ret
 
 press_any_key_check:
     sbi PORTD,PORTD7
@@ -1407,6 +1423,7 @@ pressed_any_key:
     cbi PORTD,PORTD6
     cbi PORTD,PORTD5
     ret
+
 delayTx1mS:
     rcall delay1mS
     dec R16
