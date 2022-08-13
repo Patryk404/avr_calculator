@@ -681,6 +681,7 @@ calculate:
     breq jump_subtraction
     ret
 addition:
+	rcall clear_output_sign
     rcall translate_string_to_numbers
 	lds temp1,calculatorInput1Length
 	lds temp2,calculatorInput2Length
@@ -807,6 +808,7 @@ subtraction:
     rjmp minus_subtraction
 plus_subtraction: ; here some bugs need to rewrite it
 	sts calculatorOutputLength, temp1
+	rcall clear_output_sign
 plus_subtraction_loop:
 	ldi YL,low(calculatorInput1)
     ldi YH,high(calculatorInput1)
@@ -845,6 +847,45 @@ plus_subtraction_1_loop:
 	dec temp1
 	rjmp plus_subtraction_1_loop
 minus_subtraction: ; the same algorithm but you need to start from second input and add minus after operation!
+	sts calculatorOutputLength, temp2
+	rcall set_output_sign
+minus_subtraction_loop:
+	ldi YL,low(calculatorInput2)
+    ldi YH,high(calculatorInput2)
+    add YL,temp2
+    ld temp,Y
+	ldi XL,low(calculatorInput1) 
+	ldi XH,high(calculatorInput1)
+	add XL,temp1
+	ld temp3,X
+	sub temp,temp3
+	ldi YL,low(calculatorOutput)
+	ldi YH,high(calculatorOutput)
+	add YL,temp2
+	st Y,temp
+	cpi temp1,0
+	breq minus_subtraction_1
+	dec temp1
+	dec temp2
+	rjmp minus_subtraction_loop
+minus_subtraction_1:
+	lds counter,calculatorInput2Length
+	cpi temp2,0
+	breq exit_subtraction
+	dec temp2
+minus_subtraction_1_loop:
+	ldi YL,low(calculatorInput2)
+	ldi YH,high(calculatorInput2)
+	add YL,temp2
+	ld temp,Y
+	ldi YH,high(calculatorOutput)
+	ldi YL,low(calculatorOutput)
+	add YL,temp2
+	st Y,temp
+	cpi temp2,0
+	breq exit_subtraction
+	dec temp2
+	rjmp minus_subtraction_1_loop
 exit_subtraction:
 	rcall calculate_borrow
 	rcall shift_output_borrow ; not stable! it replace sign memory byte sometimes! keep this in mind
@@ -1132,6 +1173,14 @@ print_calculator_output:
 	ldi temp,'='
 	rcall send_letter
 
+	lds temp,calculatorOutputSign
+	cpi temp,1
+	brne print_calculator_output_1
+
+	ldi temp,'-'
+	rcall send_letter
+
+print_calculator_output_1:
 	ldi counter,0
 	lds temp1,calculatorOutputLength
     inc temp1 ; this must be 
@@ -1386,7 +1435,7 @@ exit_shift_output_left:
 	sts calculatorOutputLength,counter
 	ret 
 
-setOutputSign: 
+set_output_sign: 
     push temp
     lds temp,calculatorOutputSign
     ldi temp,1
@@ -1394,7 +1443,7 @@ setOutputSign:
     pop temp
     ret
 
-clearOutputSign:
+clear_output_sign:
     push temp
     lds temp,calculatorOutputSign
     ldi temp,0
