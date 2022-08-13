@@ -1301,37 +1301,37 @@ return_calculate_carry:
 	ret
 
 calculate_borrow:
-	ldi counter,0
+	lds counter,calculatorOutputLength
 	lds temp3,calculatorOutputLength
-calculate_borrow_loop:	
+calculate_borrow_loop:
 	ldi YL,low(calculatorOutput)
     ldi YH,high(calculatorOutput)
 	clc
 	adc YL,counter
 	ld temp,Y
-	cp counter,temp3
+	cpi counter,0
 	breq exit_calculate_borrow
 check_borrow:
-	inc counter
-	inc YL
+	dec counter
 	ld temp1,Y
-	push temp1
-	andi temp1,$F0
-	cpi temp1,$F0
+	push temp
+	andi temp,$F0
+	cpi temp,$F0
 	breq borrow
-	pop temp1
+	pop temp
 jump_loop:
 	dec counter
 	inc counter
 	rjmp calculate_borrow_loop
 borrow:
-	pop temp1
-	subi temp1,6
-	andi temp1,$0F
-	st Y,temp1
-	dec YL
-	dec temp
+	pop temp
+	subi temp,6
+	andi temp,$0F
 	st Y,temp
+	dec YL
+	ld temp1,Y
+	dec temp1
+	st Y,temp1
 	rjmp jump_loop
 exit_calculate_borrow:
 	ret
