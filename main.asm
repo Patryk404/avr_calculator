@@ -827,6 +827,7 @@ same_length:
     cpi counter,temp1
     breq plus_subtraction
     inc counter
+    rjmp same_length_subtraction
 plus_subtraction: ; here some bugs need to rewrite it
 	sts calculatorOutputLength, temp1
 	rcall clear_output_sign
