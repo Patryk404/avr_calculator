@@ -63,6 +63,7 @@
 .def temp1 = R19
 .def temp2 =R20 
 .def temp3 = R21
+.def temp4 =R22
 ; free: R17 to R29
 ; free: R31:R30 = Z
 ;
@@ -84,6 +85,8 @@ calculatorOutputLength: .BYTE 1
 calculatorOutputSign: .BYTE 1 ; 1 -> means minus 0-> means plus
 calculatorOutputTemp: .BYTE 16
 calculatorOutputTempLength: .BYTE 1
+calculatorOutputCarryLength: .BYTE 1
+; calculatorOutputCarrySpace: .BYTE 16
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
 
@@ -962,6 +965,10 @@ multiply:
 	lds temp2,calculatorInput2Length
 	dec temp1
 	dec temp2
+	ldi temp,15
+	ldi counter,0
+multiply_loop:
+	push temp
 	ldi YL,low(calculatorInput1)
 	ldi YH,high(calculatorInput1)
 	add YL,temp1
@@ -970,40 +977,34 @@ multiply:
 	add XL,temp2
 	ld temp,Y
 	ld temp3,X
-	mul temp,temp3 ; unsigned multiplication
-	mov temp,r0 ; here logic how to guess number
-	cpi temp,$0A
-	brlo no_carry
-	cpi temp,$14 
-	brlo carry_one
-	cpi temp,$1E
-	brlo carry_two
-	cpi temp,$28
-	brlo carry_three
-	cpi temp,$32
-	brlo carry_four
-	cpi temp,$3C
-	brlo carry_five
-	cpi temp,$46
-	brlo carry_six
-	cpi temp,$50
-	brlo carry_seven
-	cpi temp,$5A
-	brlo carry_eight
-	cpi temp,$64
-	brlo carry_nine
-no_carry:
-carry_one:
-carry_two:
-carry_three:
-carry_four:
-carry_five:
-carry_six:
-carry_seven:
-carry_eight:
-carry_nine:
-	;;;;;
+	mul temp,temp3 ; unsigned multiplication IN R0 we have result
+	mov temp3,r0
+	pop temp
+	ldi ZL,low(calculatorOutput)
+	ldi ZH,high(calculatorOutput)
+	add ZL,temp
+	ld temp4,Z
+	add temp3,temp4
+	st Z,temp3
+	cpi temp1,0
+	breq next_number
+	dec temp
+	dec temp1
+	inc counter
+	rjmp multiply_loop
+next_number: 
+	cpi temp2,0
+	breq exit_multiply	
+	lds temp1,calculatorInput1Length
+	dec temp1
+	dec temp2 
+	dec counter
+	add temp,counter
+	rjmp multiply_loop
+
 exit_multiply:
+	rcall count_multiplication_output_length
+	rcall calculate_carry_multiplication
 	ret
 
 jump_second_line_lcd:
@@ -1548,6 +1549,25 @@ exit_shift_output_left:
 	sts calculatorOutputLength,counter
 	ret 
 
+count_multiplication_output_length:
+	ldi temp,0
+	ldi counter,0
+count_multiplication_output_length_loop:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	add YL,temp
+	ld temp1,Y
+	cpi temp1,0
+	brne return_count_multiplication_output_length
+	inc counter
+	inc temp
+	rjmp count_multiplication_output_length_loop
+return_count_multiplication_output_length:
+	ldi temp,15
+	sub temp,counter
+	sts calculatorOutputCarryLength,temp
+	ret
+
 set_output_sign: 
     push temp
     lds temp,calculatorOutputSign
@@ -1563,6 +1583,341 @@ clear_output_sign:
     sts calculatorOutputSign,temp
     pop temp
     ret
+
+calculate_carry_multiplication: ; my scientific research showed that highest carry value in multiplication is 17
+	ldi counter,15
+	ldi temp2,15
+	lds temp1,calculatorOutputCarryLength
+calculate_carry_multiplication_loop:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	add YL,temp2
+	ld temp,Y
+	cpi temp,$0A
+	brlo jump_carry_0
+	cpi temp,$14
+	brlo jump_carry_1
+	cpi temp,$1E
+	brlo jump_carry_2
+	cpi temp,$28
+	brlo jump_carry_3
+	cpi temp,$32
+	brlo jump_carry_4
+	cpi temp,$3C
+	brlo jump_carry_5
+	cpi temp,$46
+	brlo jump_carry_6
+	cpi temp,$50
+	brlo jump_carry_7
+	cpi temp,$5A
+	brlo jump_carry_8
+	cpi temp,$64
+	brlo jump_carry_9
+	cpi temp,$6E
+	brlo jump_carry_10
+	cpi temp,$78
+	brlo jump_carry_11
+	cpi temp,$82
+	brlo jump_carry_12
+	cpi temp,$8C
+	brlo jump_carry_13
+	cpi temp,$96
+	brlo jump_carry_14
+	cpi temp,$A0
+	brlo jump_carry_15
+	cpi temp,$AA
+	brlo jump_carry_16
+	cpi temp,$B4
+	brlo jump_carry_17
+jump_carry_0:
+	rjmp carry_0
+jump_carry_1:
+	rjmp carry_1
+jump_carry_2:
+	rjmp carry_2
+jump_carry_3:
+	rjmp carry_3
+jump_carry_4:
+	rjmp carry_4
+jump_carry_5:
+	rjmp carry_5
+jump_carry_6:
+	rjmp carry_6
+jump_carry_7:
+	rjmp carry_7
+jump_carry_8:
+	rjmp carry_8
+jump_carry_9:
+	rjmp carry_9
+jump_carry_10:
+	rjmp carry_10
+jump_carry_11:
+	rjmp carry_11
+jump_carry_12:
+	rjmp carry_12
+jump_carry_13:
+	rjmp carry_13
+jump_carry_14:
+	rjmp carry_14
+jump_carry_15:
+	rjmp carry_15
+jump_carry_16:
+	rjmp carry_16
+jump_carry_17:
+	rjmp carry_17
+jump_return_calculate_carry_multiplication_1:
+	rjmp return_calculate_carry_multiplication
+
+	carry_0:
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication_1
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_1:
+	ldi temp3,$A
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	inc temp
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_2:
+	ldi temp3,$14
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,2
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_3:
+	ldi temp3,$1E
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,3
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_4:
+	ldi temp3,$28
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,4
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_5:
+	ldi temp3,$32
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,5
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+jump_return_calculate_carry_multiplication:
+	rjmp return_calculate_carry_multiplication
+	carry_6:
+	ldi temp3,$3C
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,6
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_7:
+	ldi temp3,$46
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,7
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_8:
+	ldi temp3,$50
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,8
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_9:
+	ldi temp3,$5A
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,9
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_10:
+	ldi temp3,$64
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,$0A
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_11:
+	ldi temp3,$6E
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,$0B
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication_2
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	jump_return_calculate_carry_multiplication_2:
+	rjmp return_calculate_carry_multiplication
+	carry_12:
+	ldi temp3,$78
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,$0C
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq jump_return_calculate_carry_multiplication_2
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_13:
+	ldi temp3,$82
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,$0D
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_14:
+	ldi temp3,$8C
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,$0E
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_15:
+	ldi temp3,$96
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,$0F
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_16:
+	ldi temp3,$A0
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,$10
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+	carry_17:
+	ldi temp3,$AA
+	sub temp,temp3
+	st Y,temp
+	dec YL
+	ld temp,Y
+	ldi temp3,$11
+	add temp,temp3
+	st Y,temp
+	cpi temp1,0
+	breq return_calculate_carry_multiplication
+	dec temp1
+	dec temp2
+	rjmp calculate_carry_multiplication_loop
+return_calculate_carry_multiplication:
+	ret
 
 press_any_key_check:
     sbi PORTD,PORTD7
