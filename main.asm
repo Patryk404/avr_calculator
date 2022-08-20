@@ -82,6 +82,8 @@ calculatorInput1Length: .BYTE 1
 calculatorInput2Length: .BYTE 1 
 calculatorOutputLength: .BYTE 1
 calculatorOutputSign: .BYTE 1 ; 1 -> means minus 0-> means plus
+calculatorOutputTemp: .BYTE 16
+calculatorOutputTempLength: .BYTE 1
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
 
@@ -291,8 +293,7 @@ check_instructions:
     ldi temp,2
     rcall delayTx1mS
 
-
-    rcall check_row3
+    rcall check_row3 
     ldi temp,2
     rcall delayTx1mS
 
@@ -505,9 +506,10 @@ next_key_row3_3:
 
     lds temp,calculatorSign
 
-    cpi temp,0
+	cpi temp,0
     brne return_from_row3
 save_sign_row3:
+	rcall save_counter
     ldi temp,'*'
     sts calculatorSign,temp
     rcall send_letter
@@ -566,8 +568,8 @@ return_from_row4:
 
 check_reset:
     IN temp,PINC
-    andi temp,$046
-	;cpi temp,$04 ;enable for debug!!!
+    andi temp,$07
+	cpi temp,$07 ;enable for debug!!!
     brne return_from_reset ; lol it should be cpi i guess... 
     rcall reset_calc
 return_from_reset:
@@ -639,13 +641,37 @@ undo: ;; for deleting numbers
     cpi temp,0
     brne undo_1
 
-undo_1:
+undo_1: ; logic for undo button to check if we are in first input or in second input and clear memory values there IT CAUSE A LOT OF ERRORS IN APP
     mov temp,counter
     cpi counter,0
     breq return_undo ;; if counter is 0 ... Beginning of the screen
 
     dec counter
+	
+	lds temp,calculatorSign
+	cpi temp,0
+	breq undo_input1
+undo_input2:
+	ldi YL,low(calculatorInput2)
+	ldi YH,high(calculatorInput2)
 
+	add YL,counter
+
+	ldi temp,0
+
+	st Y,temp
+
+	rjmp undo_from_screen
+undo_input1:
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+
+	add YL,counter
+
+	ldi temp,0
+
+	st Y,temp
+undo_from_screen:
     ldi temp,entry_mode
     rcall send_command
 
@@ -671,6 +697,8 @@ undo_1:
 return_undo:
     ret 
 
+jump_multiply:
+	rjmp multiply
 jump_subtraction:
 	rjmp subtraction
 calculate:
@@ -679,6 +707,8 @@ calculate:
     breq addition
     cpi temp,'-'
     breq jump_subtraction
+	cpi temp,'*'
+	breq jump_multiply
     ret
 addition:
 	rcall clear_output_sign
@@ -924,6 +954,57 @@ exit_subtraction:
 	rcall translate_numbers_to_string
 	rcall print_calculator_output
     ret 
+multiply:
+	rcall clear_output_sign
+    rcall translate_string_to_numbers
+	;; here logic for multiplication
+	lds temp1,calculatorInput1Length
+	lds temp2,calculatorInput2Length
+	dec temp1
+	dec temp2
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+	add YL,temp1
+	ldi XL,low(calculatorInput2) 
+	ldi XH,high(calculatorInput2)
+	add XL,temp2
+	ld temp,Y
+	ld temp3,X
+	mul temp,temp3 ; unsigned multiplication
+	mov temp,r0 ; here logic how to guess number
+	cpi temp,$0A
+	brlo no_carry
+	cpi temp,$14 
+	brlo carry_one
+	cpi temp,$1E
+	brlo carry_two
+	cpi temp,$28
+	brlo carry_three
+	cpi temp,$32
+	brlo carry_four
+	cpi temp,$3C
+	brlo carry_five
+	cpi temp,$46
+	brlo carry_six
+	cpi temp,$50
+	brlo carry_seven
+	cpi temp,$5A
+	brlo carry_eight
+	cpi temp,$64
+	brlo carry_nine
+no_carry:
+carry_one:
+carry_two:
+carry_three:
+carry_four:
+carry_five:
+carry_six:
+carry_seven:
+carry_eight:
+carry_nine:
+	;;;;;
+exit_multiply:
+	ret
 
 jump_second_line_lcd:
     ldi temp,entry_mode
@@ -1534,4 +1615,4 @@ delay1uS:
     pop     R16                            ; [2]
     push    R16                            ; [2]
     pop     R16                            ; [2]
-    ret                                     ; [4]               
+    ret                                     ; [4]             

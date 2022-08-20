@@ -1,9 +1,11 @@
 .PHONY : compile linux   
-windows:
-	./gavrasm.exe main.asm
-	cp ./main.hex C:\avrdude-6.4-mingw32
+windows: compile
+	avrdude -c usbasp -p m88p -B8 -U flash:w:main.hex
 linux: compile
 	avrdude -c usbasp -p m88p -B8 -U flash:w:main.hex
 
 compile:
 	./gavrasm main.asm
+
+upload: 
+	avrdude -c usbasp -p m88p -B8 -U flash:w:main.hex
