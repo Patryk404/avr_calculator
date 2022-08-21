@@ -288,7 +288,7 @@ Loop:
     rcall delayTx1mS
     rjmp Loop
 check_instructions:
-    rcall check_row1
+    rcall check_row1 
     ldi temp,2
     rcall delayTx1mS
 
@@ -571,8 +571,8 @@ return_from_row4:
 
 check_reset:
     IN temp,PINC
-    andi temp,$07
-	cpi temp,$07 ;enable for debug!!!
+    andi temp,$04
+	cpi temp,$04 ;enable for debug!!!
     brne return_from_reset ; lol it should be cpi i guess... 
     rcall reset_calc
 return_from_reset:
@@ -610,17 +610,17 @@ reset_calc:
 
 reset_memory:
     ldi temp,0
-    ldi temp1,0
-    ldi temp2,0
-    ldi temp3,0
-    ldi counter,0
-    sts calculatorInput1,temp
-    sts calculatorInput2,temp
     sts calculatorSign,temp
-    sts calculatorOutput,temp
     sts calculatorInput1Length,temp
     sts calculatorInput2Length,temp
     sts calculatorOutputLength,temp
+	rcall reset_memory_output
+	rcall reset_memory_input1
+	rcall reset_memory_input2
+	ldi temp1,0
+    ldi temp2,0
+    ldi temp3,0
+    ldi counter,0
     ret
 
 print:
@@ -1001,10 +1001,13 @@ next_number:
 	dec counter
 	add temp,counter
 	rjmp multiply_loop
-
 exit_multiply:
-	rcall count_multiplication_output_length
+	rcall count_multiplication_output_carry_length
 	rcall calculate_carry_multiplication
+	rcall count_output_length
+	rcall shift_output_multiplication_left
+	rcall translate_numbers_to_string
+	rcall print_calculator_output
 	ret
 
 jump_second_line_lcd:
@@ -1549,20 +1552,20 @@ exit_shift_output_left:
 	sts calculatorOutputLength,counter
 	ret 
 
-count_multiplication_output_length:
+count_multiplication_output_carry_length:
 	ldi temp,0
 	ldi counter,0
-count_multiplication_output_length_loop:
+count_multiplication_output_carry_length_loop:
 	ldi YL,low(calculatorOutput)
     ldi YH,high(calculatorOutput)
 	add YL,temp
 	ld temp1,Y
 	cpi temp1,0
-	brne return_count_multiplication_output_length
+	brne return_count_multiplication_output_carry_length
 	inc counter
 	inc temp
-	rjmp count_multiplication_output_length_loop
-return_count_multiplication_output_length:
+	rjmp count_multiplication_output_carry_length_loop
+return_count_multiplication_output_carry_length:
 	ldi temp,15
 	sub temp,counter
 	sts calculatorOutputCarryLength,temp
@@ -1917,6 +1920,94 @@ jump_return_calculate_carry_multiplication:
 	dec temp2
 	rjmp calculate_carry_multiplication_loop
 return_calculate_carry_multiplication:
+	ret
+
+count_output_length:
+	ldi temp,0
+	ldi counter,0
+count_output_length_loop:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	add YL,temp
+	ld temp1,Y
+	cpi temp1,0
+	brne return_count_output_length
+	inc counter
+	inc temp
+	rjmp count_output_length_loop
+return_count_output_length:
+	ldi temp,15
+	sub temp,counter
+	sts calculatorOutputLength,temp
+	ret
+
+shift_output_multiplication_left:
+	lds counter,calculatorOutputLength
+	ldi temp1,0
+	ldi temp3,0
+shift_output_multiplication_left_loop:
+	ldi temp,15
+	sub temp,counter
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	add YL,temp
+	ld temp2,Y
+	st Y,temp3 
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	add YL,temp1
+	st Y,temp2
+	cpi counter,0
+	breq return_shift_output_multiplication_left
+	dec counter
+	inc temp1
+	rjmp shift_output_multiplication_left_loop
+return_shift_output_multiplication_left:
+	ret
+
+reset_memory_output:
+	ldi counter,0
+	ldi temp,0
+reset_memory_output_loop:
+	ldi YL,low(calculatorOutput)
+    ldi YH,high(calculatorOutput)
+	add YL,counter
+	st Y,temp
+	cpi counter,15
+	breq return_reset_memory_output
+	inc counter
+	rjmp reset_memory_output_loop
+return_reset_memory_output:
+	ret
+
+reset_memory_input1:
+	ldi counter,0
+	ldi temp,0
+reset_memory_input1_loop:
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+	add YL,counter
+	st Y,temp
+	cpi counter,15
+	breq return_reset_memory_input1
+	inc counter
+	rjmp reset_memory_input1_loop
+return_reset_memory_input1:
+	ret
+
+reset_memory_input2:
+	ldi counter,0
+	ldi temp,0
+reset_memory_input2_loop:
+	ldi YL,low(calculatorInput2)
+    ldi YH,high(calculatorInput2)
+	add YL,counter
+	st Y,temp
+	cpi counter,15
+	breq return_reset_memory_input2
+	inc counter
+	rjmp reset_memory_input2_loop
+return_reset_memory_input2:
 	ret
 
 press_any_key_check:
