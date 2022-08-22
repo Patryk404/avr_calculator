@@ -86,6 +86,7 @@ calculatorOutputSign: .BYTE 1 ; 1 -> means minus 0-> means plus
 calculatorOutputTemp: .BYTE 16
 calculatorOutputTempLength: .BYTE 1
 calculatorOutputCarryLength: .BYTE 1
+calculatorOutputRest: .BYTE 1
 ; calculatorOutputCarrySpace: .BYTE 16
 ; (Add labels for SRAM locations here, e.g.
 ; sLabel1:
@@ -102,6 +103,9 @@ author:
 .db "Patryk Kurek",0x00
 calculatorString:  
 .db "Avr Calculator",0x00
+
+divisionByNull:
+.db "Don't divide by 0!"
 ; **********************************
 ; R E S E T  &  I N T - V E C T O R S
 ; **********************************
@@ -560,7 +564,8 @@ next_key_row4_3:
 
     cpi temp,0
     brne return_from_row4
-save_sign_row4:
+save_sign_row4:	
+	rcall save_counter
     ldi temp,0b11111101 ; / division
     sts calculatorSign,temp
     rcall send_letter
@@ -704,6 +709,8 @@ jump_multiply:
 	rjmp multiply
 jump_subtraction:
 	rjmp subtraction
+jump_division:
+	rjmp division
 calculate:
     lds temp,calculatorSign
     cpi temp,'+'
@@ -712,6 +719,8 @@ calculate:
     breq jump_subtraction
 	cpi temp,'*'
 	breq jump_multiply
+	cpi temp,0b11111101
+	breq jump_division
     ret
 addition:
 	rcall clear_output_sign
@@ -1008,6 +1017,163 @@ exit_multiply:
 	rcall shift_output_multiplication_left
 	rcall translate_numbers_to_string
 	rcall print_calculator_output
+	ret
+
+
+jump_output_null:
+	rjmp output_null
+division:
+	rcall translate_string_to_numbers
+	ldi temp4,0 ; this will be our kind of counter
+division_loop:
+	cpi temp4,$0A
+	brne division_loop_continue
+	ldi temp4,0
+division_loop_continue:
+	rcall calculate_borrow_division
+	rcall shift_input1_division
+	rcall count_multiplication_output_carry_length
+	rcall calculate_carry_multiplication ; i think this will fit well
+	rcall count_output_length
+	lds temp1,calculatorInput1Length
+	lds temp2,calculatorInput2Length
+    ldi counter,0
+	dec temp1
+	dec temp2
+	cp temp1,temp2
+    breq same_length_division
+    cp temp1,temp2
+    brsh plus_division
+	cp temp1,temp2
+	brlo jump_output_null
+    rjmp same_length_division_2
+same_length_division:
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+    add YL,counter
+    ldi XL,low(calculatorInput2)
+    ldi XH,high(calculatorInput2)
+    add XL,counter
+    ld temp,Y
+    ld temp3,X
+    cp temp,temp3
+    breq same_length_division_1
+    cp temp,temp3
+    brsh plus_division
+    rjmp same_length_division_2
+same_length_division_1:
+	cp counter,temp1
+    breq same_length_division_2
+    inc counter
+    rjmp same_length_division
+plus_division:
+	sts calculatorOutputLength, temp1
+	rcall clear_output_sign
+plus_division_loop:
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+    add YL,temp1
+    ld temp,Y
+	ldi XL,low(calculatorInput2) 
+	ldi XH,high(calculatorInput2)
+	add XL,temp2
+	ld temp3,X
+	sub temp,temp3
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+	add YL,temp1
+	st Y,temp
+	cpi temp2,0
+	breq plus_division_1
+	dec temp2
+	dec temp1
+	rjmp plus_division_loop
+jump_exit_division:
+	rjmp exit_division
+plus_division_1:
+	lds counter,calculatorInput1Length
+	cpi temp1,0
+	breq jump_exit_division
+	dec temp1
+plus_division_1_loop:
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+	add YL,temp1
+	ld temp,Y
+	ldi YH,high(calculatorInput1)
+	ldi YL,low(calculatorInput1)
+	add YL,temp1
+	st Y,temp
+	cpi temp1,0
+	breq exit_division
+	dec temp1
+	rjmp plus_division_1_loop
+same_length_division_2:
+	lds temp,calculatorInput1Length
+	lds temp1,calculatorInput2Length
+	cp temp,temp1
+	brlo add_rest
+	ldi temp4,0
+same_length_division_2_loop:
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+	add YL,temp4
+	ldi XL,low(calculatorInput2) 
+	ldi XH,high(calculatorInput2)
+	add YL,temp4
+	ld temp2,Y
+	ld temp3,X
+	cp temp2,temp3
+	brlo add_rest
+	cp temp,temp1
+	breq no_rest
+add_rest:
+	ldi temp,1
+	sts calculatorOutputRest,temp
+	rjmp return_same_length_division_2
+no_rest:
+	ldi temp,0
+	sts calculatorOutputRest,temp
+	ldi YL,low(calculatorOutput)
+	ldi YH,high(calculatorInput1)
+	ldi temp,15
+	add YL,temp
+	ld temp,Y
+	inc temp
+	st Y,temp
+return_same_length_division_2:
+	rcall count_multiplication_output_carry_length
+	rcall calculate_carry_multiplication ; i think this will fit well
+	rcall count_output_length
+	rcall shift_output_multiplication_left
+	rcall translate_numbers_to_string
+	rcall print_calculator_output
+	ret	
+output_one:
+	rcall same_length_subtraction
+	ldi temp,0
+	sts calculatorOutputLength,temp
+	ldi temp,1
+	sts calculatorOutput,temp
+	rcall translate_numbers_to_string
+	rcall print_calculator_output
+	ret	
+output_null:
+	ldi temp,0
+	sts calculatorOutput,temp
+	sts calculatorOutputRest,temp
+	sts calculatorOutputLength,temp
+	rcall translate_numbers_to_string
+	rcall print_calculator_output
+	ret
+exit_division: ; do we need this?
+	ldi temp,15
+	ldi YL,low(calculatorOutput)
+	ldi YH,high(calculatorOutput)
+	add YL,temp
+	inc temp4
+	st Y,temp4
+	rjmp division_loop
 	ret
 
 jump_second_line_lcd:
@@ -1503,6 +1669,42 @@ borrow:
 exit_calculate_borrow:
 	ret
 
+calculate_borrow_division:
+	lds counter,calculatorInput1Length
+	lds temp3,calculatorInput1Length
+calculate_borrow_division_loop:
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+	clc
+	adc YL,counter
+	ld temp,Y
+	cpi counter,0
+	breq exit_calculate_borrow_division
+check_borrow_division:
+	dec counter
+	ld temp1,Y
+	push temp
+	andi temp,$F0
+	cpi temp,$F0
+	breq borrow_division
+	pop temp
+jump_loop_division:
+	dec counter
+	inc counter
+	rjmp calculate_borrow_division_loop
+borrow_division:
+	pop temp
+	subi temp,6
+	andi temp,$0F
+	st Y,temp
+	dec YL
+	ld temp1,Y
+	dec temp1
+	st Y,temp1
+	rjmp jump_loop_division
+exit_calculate_borrow_division:
+	ret
+
 shift_output_borrow:
 	lds counter,calculatorOutputLength
 	ldi temp,0 ; counter for fields
@@ -1586,6 +1788,35 @@ clear_output_sign:
     sts calculatorOutputSign,temp
     pop temp
     ret
+
+shift_input1_division:
+	ldi temp1,0
+	lds counter,calculatorInput1Length
+	dec counter
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+	ld temp,Y
+	cpi temp,0
+	breq shift_input1
+	ret
+shift_input1:
+	cp temp1,counter
+	breq return_shift_input1_division
+	inc YL 
+	ld temp,Y
+	dec YL
+	st Y,temp
+	inc YL
+	ldi temp,0
+	st Y,temp
+	inc temp1
+	rjmp shift_input1
+return_shift_input1_division:
+	lds temp,calculatorInput1Length
+	dec temp
+	sts calculatorInput1Length,temp
+	ret
+
 
 calculate_carry_multiplication: ; my scientific research showed that highest carry value in multiplication is 17
 	ldi counter,15
