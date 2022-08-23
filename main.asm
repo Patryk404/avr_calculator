@@ -103,6 +103,8 @@ author:
 .db "Patryk Kurek",0x00
 calculatorString:  
 .db "Avr Calculator",0x00
+restString:
+.db " rest: ",0x00
 
 divisionByNull:
 .db "Don't divide by 0!"
@@ -469,7 +471,6 @@ save_sign_row2:
 return_from_row2: 
     CBI PORTD,PORTD6
     ret 
-
 
 check_row3:
     sbi PORTD,PORTD5
@@ -1116,7 +1117,7 @@ plus_division_1_loop:
 	add YL,temp1
 	st Y,temp
 	cpi temp1,0
-	breq exit_division
+	breq jump_exit_division
 	dec temp1
 	rjmp plus_division_1_loop
 same_length_division_2:
@@ -1135,9 +1136,29 @@ same_length_division_2_loop:
 	ld temp2,Y
 	ld temp3,X
 	cp temp2,temp3
-	brlo add_rest
+	brlo add_rest  
 	cp temp,temp1
+	breq check_rest
+check_rest:
+	ldi temp4,0
+check_rest_loop:
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+	ldi XL,low(calculatorInput2) 
+	ldi XH,high(calculatorInput2)
+	add YL,temp4
+	add XL,temp4
+	ld temp2,Y
+	ld temp3,X
+	cp temp2,temp3
+	breq check_res_next_pos
+	cp temp2,temp3
+	brlo add_rest
+check_res_next_pos:
+	cp temp4,temp
 	breq no_rest
+	inc temp4
+	rjmp check_rest_loop
 add_rest:
 	ldi temp,1
 	sts calculatorOutputRest,temp
@@ -1159,6 +1180,7 @@ return_same_length_division_2:
 	rcall shift_output_multiplication_left
 	rcall translate_numbers_to_string
 	rcall print_calculator_output
+	rcall add_rest_output
 	ret	
 output_one:
 	rcall same_length_subtraction
@@ -1194,6 +1216,107 @@ jump_second_line_lcd:
     ldi temp,force_cursor_beginning_second_line
     rcall send_command
     ret
+
+translate_numbers_to_string_division_rest:
+	ldi counter,0
+	lds temp1,calculatorInput1Length
+translate_numbers_to_string_division_rest_loop:
+	ldi YL,low(calculatorInput1)
+    ldi YH,high(calculatorInput1)
+    add YL,counter
+	ld temp,Y
+	cpi temp,0
+	breq translate_zero_division_rest
+	cpi temp,1
+	breq translate_one_division_rest
+	cpi temp,2
+	breq translate_two_division_rest
+	cpi temp,3
+	breq translate_three_division_rest
+	cpi temp,4
+	breq translate_four_division_rest
+	cpi temp,5
+	breq translate_five_division_rest
+	cpi temp,6
+	breq translate_six_division_rest
+	cpi temp,7
+	breq translate_seven_division_rest
+	cpi temp,8
+	breq translate_eight_division_rest
+	cpi temp,9
+	breq translate_nine_division_rest
+translate_zero_division_rest:
+	ldi temp,'0'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_one_division_rest:
+	ldi temp,'1'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_two_division_rest:
+	ldi temp,'2'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_three_division_rest:
+	ldi temp,'3'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_four_division_rest:
+	ldi temp,'4'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_five_division_rest:
+	ldi temp,'5'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_six_division_rest:
+	ldi temp,'6'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_seven_division_rest:
+	ldi temp,'7'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_eight_division_rest:
+	ldi temp,'8'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+translate_nine_division_rest:
+	ldi temp,'9'
+	st Y,temp
+	cp counter,temp1
+	breq return_translate_numbers_to_string_division_rest	
+	inc counter
+	rjmp translate_numbers_to_string_division_rest_loop
+return_translate_numbers_to_string_division_rest:
+	ret
 
 translate_numbers_to_string:
 	ldi counter,0
@@ -2250,6 +2373,30 @@ reset_memory_input2_loop:
 	inc counter
 	rjmp reset_memory_input2_loop
 return_reset_memory_input2:
+	ret
+
+add_rest_output:
+	lds temp1,calculatorInput1Length
+	lds temp,calculatorOutputRest
+	cpi temp,1
+	brne return_add_rest_output
+	ldi XL,low(calculatorOutput)
+	ldi XH,high(calculatorOutput)
+    ldi ZL,low(restString<<1)
+    ldi ZH,high(restString<<1) ; word alignment
+    rcall print
+	rcall translate_numbers_to_string_division_rest
+	ldi counter,0
+add_rest_output_loop:
+	ldi YL,low(calculatorInput1)
+	ldi YH,high(calculatorInput1)
+	add YL,counter
+	ld temp,Y
+	rcall send_letter
+	cp counter,temp1
+	breq return_add_rest_output
+	rjmp add_rest_output_loop
+return_add_rest_output:
 	ret
 
 press_any_key_check:
