@@ -540,9 +540,18 @@ next_key_row4_1:
     brne next_key_row4_2
     cpi counter,$10
     breq return_from_row4
-    ldi temp,'0'
+	cpi counter,0
+	breq check_if_division_by_0
+place_null:
+	ldi temp,'0'
     rcall save_number_input_buffer
     rcall send_letter
+	rjmp next_key_row4_2
+check_if_division_by_0:
+	lds temp,calculatorSign
+	cpi temp,0b11111101
+	breq next_key_row4_2
+	rjmp place_null
 next_key_row4_2:
     IN temp,PIND
     andi temp,$02
@@ -1025,6 +1034,10 @@ jump_output_null:
 division:
 	rcall translate_string_to_numbers
 	ldi temp4,0 ; this will be our kind of counter
+	lds temp1,calculatorInput1Length
+	lds temp2,calculatorInput2Length
+	cp temp1,temp2
+    brlo jump_output_null
 division_loop:
 	cpi temp4,$0A
 	brne division_loop_continue
@@ -1044,8 +1057,6 @@ division_loop_continue:
     breq same_length_division
     cp temp1,temp2
     brsh plus_division
-	cp temp1,temp2
-	brlo jump_output_null
     rjmp same_length_division_2
 same_length_division:
 	ldi YL,low(calculatorInput1)
