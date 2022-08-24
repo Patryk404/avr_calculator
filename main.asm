@@ -1207,7 +1207,6 @@ exit_division: ; do we need this?
 	inc temp4
 	st Y,temp4
 	rjmp division_loop
-	ret
 
 jump_second_line_lcd:
     ldi temp,entry_mode
