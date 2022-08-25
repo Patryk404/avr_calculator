@@ -750,6 +750,8 @@ store_more_input1:
 	rjmp more_length_input1
 store_more_input2:
 	sts calculatorOutputLength,temp2
+	cp temp1,temp2
+	breq same_length_input
 	rjmp more_length_input2
 more_length_input1:
 	ldi YL,low(calculatorInput1)
